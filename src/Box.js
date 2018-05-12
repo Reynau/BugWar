@@ -40,7 +40,6 @@ class Box {
 		
 
 	incrementLevel (team) {
-		console.log("Incrementing level of box")
 		// Cannot increment level of a blocked box
 		if (this.blocked) return
 

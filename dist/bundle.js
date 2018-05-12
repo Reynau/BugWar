@@ -41,7 +41,6 @@ class Box {
 		
 
 	incrementLevel (team) {
-		console.log("Incrementing level of box")
 		// Cannot increment level of a blocked box
 		if (this.blocked) return
 
@@ -395,7 +394,9 @@ var keyboard;
 var game, menu;
 var scene;
 
-var lastFrame = 0;
+var timestep = 1000 / 60
+
+var lastFrame = Date.now();
 var delta = 0;
 var renderInQueue = false;
 
@@ -405,7 +406,8 @@ function init () {
 	scene = game;
 }
 
-function updateDelta (timestamp) {
+function updateDelta () {
+	let timestamp = Date.now()
 	delta = timestamp - lastFrame
 	lastFrame = timestamp
 }
@@ -418,20 +420,23 @@ function update () {
 	}
 }
 
-function draw () {
+function draw (timestamp) {
 	renderInQueue = false
 	scene.draw()
 }
 
-function loop (timestamp) {
-	// place the rAF *before* the draw() to assure as close to
-	// 60fps with the setTimeout fallback.
-	if (!renderInQueue) { 
+function loop () {
+	updateDelta()
+	while (delta >= timestep) {
+		update()
+		delta -= timestep
+	}
+
+	// Rendering goes independent of logic. Logic always run.
+	if (!renderInQueue) {
 		window.requestAnimationFrame(draw)
 		renderInQueue = true
 	}
-	updateDelta(timestamp)
-	update()
 }
 
 window.onload = function () {
@@ -443,6 +448,6 @@ window.onload = function () {
 	document.addEventListener("keyup", function(event) { keyboard.onKeyup(event); });
 
 	init()
-	setInterval(loop, 16)
+	setInterval(loop, timestep)
 }
 },{"./Constants.js":2,"./Game.js":4,"./Keyboard.js":5,"./Menu.js":7}]},{},[9]);
