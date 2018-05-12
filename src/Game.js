@@ -19,7 +19,7 @@ class Game {
 		this.hud = undefined;
 
 		this.players = {
-			1: [new Player(5,5,1)],
+			1: [new Player(5, 5, game_vars.map_width, game_vars.map_height, 1)],
 			2: [],
 			3: [],
 			4: [],

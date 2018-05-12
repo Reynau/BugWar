@@ -1,11 +1,18 @@
 class Player {
-	constructor (x, y, team) {
+	constructor (x, y, xLimit, yLimit, team) {
+		// Maximum x and y
+		this.mx = xLimit
+		this.my = yLimit
+		// Actual position
 		this.x = x
 		this.y = y
+		// Old position
 		this.ox = x
 		this.oy = y
+		// X and Y speed
 		this.vx = 1
 		this.vy = 1
+
 		this.team = team
 		this.points = 0
 
@@ -40,7 +47,13 @@ class Player {
 		this.x += dx
 		this.y += dy
 
-		events.publish("player_update", this.generateUpdateEvent())
+		if (this.x < 0 || this.y < 0 || this.x >= this.mx || this.y >= this.my) {
+			this.x = this.ox
+			this.y = this.oy
+		}
+		else events.publish("player_update", this.generateUpdateEvent())
+
+
 	}
 
 	update (keyboard, events) {
