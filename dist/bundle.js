@@ -154,6 +154,7 @@ module.exports = Events
 const GameMap = require('./Map.js')
 const Events = require('./Events.js')
 const Player = require('./Player.js')
+const IA = require('./IA.js')
 const {STATE} = require('./Constants.js')
 
 var game_vars = {
@@ -172,8 +173,8 @@ class Game {
 		this.hud = undefined;
 
 		this.players = {
-			1: [new Player(5,5,1)],
-			2: [],
+			1: [new Player(0, 0, game_vars.map_width, game_vars.map_height, 1)],
+			2: [new IA(9, 9, game_vars.map_width, game_vars.map_height, 2)],
 			3: [],
 			4: [],
 		}
@@ -203,6 +204,13 @@ class Game {
 		}
 	}
 
+	clearCanvas () {
+		ctx.beginPath()
+		ctx.fillStyle = "white"
+		ctx.fillRect(0, 0, canv.width, canv.height)
+		ctx.closePath()
+	}
+
 	update (keyboard) {
 		this.updatePlayers(keyboard);
 		// update players
@@ -214,6 +222,7 @@ class Game {
 	}
 
 	draw () {
+		this.clearCanvas()
 		this.map.draw();
 		this.drawPlayers();
 		// draw items
@@ -223,7 +232,104 @@ class Game {
 }
 
 module.exports = Game
-},{"./Constants.js":2,"./Events.js":3,"./Map.js":6,"./Player.js":8}],5:[function(require,module,exports){
+},{"./Constants.js":2,"./Events.js":3,"./IA.js":5,"./Map.js":7,"./Player.js":9}],5:[function(require,module,exports){
+class IA {
+	constructor (x, y, xLimit, yLimit, team) {
+		// Maximum x and y
+		this.mx = xLimit
+		this.my = yLimit
+		// Actual position
+		this.x = x
+		this.y = y
+		// Old position
+		this.ox = x
+		this.oy = y
+		// X and Y speed
+		this.vx = 1
+		this.vy = 1
+
+		this.team = team
+		this.points = 0
+
+		this.last_update_timestamp = 0;
+	}
+
+	generateUpdateEvent () {
+		return {
+			x: this.x,
+			y: this.y,
+			ox: this.ox,
+			oy: this.oy,
+			vx: this.vx,
+			vy: this.vy,
+			team: this.team,
+			points: this.points,
+		}
+	}
+
+	playerGetUpdate (data) {
+		this.x = data.x
+		this.y = data.y
+		this.ox = data.ox
+		this.oy = data.oy
+		this.vx = data.vx
+		this.vy = data.vy
+		this.team = data.team
+		this.points = data.points
+	}
+
+	moveAutonomously (events) {
+		let dir = this.random_round(1,4)
+		console.log(dir)
+		switch(dir) {
+			case 1: this.x += this.vx; break
+			case 2: this.x -= this.vx; break
+			case 3: this.y += this.vy; break
+			case 4: this.y -= this.vy; break
+		}
+
+		if (this.x < 0 || this.y < 0 || this.x >= this.mx || this.y >= this.my) {
+			this.x = this.ox
+			this.y = this.oy
+		}
+		else events.publish("player_update", this.generateUpdateEvent())
+	}
+
+	update (keyboard, events) {
+		// Update last timestamp
+		var timestamp = Date.now();
+		if (timestamp - this.last_update_timestamp < 500) return;
+		this.last_update_timestamp = timestamp;
+
+		// Save old position
+		this.ox = this.x
+		this.oy = this.y
+
+		// Update player position
+		this.moveAutonomously(events)
+	}
+
+	draw () {
+		ctx.beginPath()
+		ctx.rect(this.x * 15, this.y * 15, 10, 10)
+		ctx.fillStyle = "magenta"
+		ctx.fill()
+		ctx.lineWidth = 1
+		ctx.strokeStyle = "green"
+		ctx.stroke()
+		ctx.closePath()
+	}
+
+	random (min, max) {
+	  	return Math.random() * (max - min + 1) + min;
+	}
+	random_round (min, max) {
+	  	return Math.floor(Math.random() * (max - min + 1)) + min;
+	}
+}
+
+module.exports = IA
+},{}],6:[function(require,module,exports){
 class Keyboard {
 
 	constructor () {
@@ -249,7 +355,7 @@ class Keyboard {
 }
 
 module.exports = Keyboard
-},{}],6:[function(require,module,exports){
+},{}],7:[function(require,module,exports){
 const Box = require('./Box.js')
 
 var map_vars = {
@@ -291,7 +397,7 @@ class Map {
 }
 
 module.exports = Map
-},{"./Box.js":1}],7:[function(require,module,exports){
+},{"./Box.js":1}],8:[function(require,module,exports){
 class Menu {
 
 	constructor () {
@@ -308,15 +414,22 @@ class Menu {
 }
 
 module.exports = Menu
-},{}],8:[function(require,module,exports){
+},{}],9:[function(require,module,exports){
 class Player {
-	constructor (x, y, team) {
+	constructor (x, y, xLimit, yLimit, team) {
+		// Maximum x and y
+		this.mx = xLimit
+		this.my = yLimit
+		// Actual position
 		this.x = x
 		this.y = y
+		// Old position
 		this.ox = x
 		this.oy = y
+		// X and Y speed
 		this.vx = 1
 		this.vy = 1
+
 		this.team = team
 		this.points = 0
 
@@ -351,7 +464,13 @@ class Player {
 		this.x += dx
 		this.y += dy
 
-		events.publish("player_update", this.generateUpdateEvent())
+		if (this.x < 0 || this.y < 0 || this.x >= this.mx || this.y >= this.my) {
+			this.x = this.ox
+			this.y = this.oy
+		}
+		else events.publish("player_update", this.generateUpdateEvent())
+
+
 	}
 
 	update (keyboard, events) {
@@ -384,26 +503,52 @@ class Player {
 }
 
 module.exports = Player
-},{}],9:[function(require,module,exports){
+},{}],10:[function(require,module,exports){
 const Game = require('./Game.js')
 const Menu = require('./Menu.js')
 const Keyboard = require('./Keyboard.js')
 const {STATE} = require('./Constants.js')
 
+// Game vars
 var keyboard;
 var game, menu;
 var scene;
 
+// Time vars
 var timestep = 1000 / 60
-
 var lastFrame = Date.now();
-var delta = 0;
+var delta = 0
+
+// FPS vars
+var fps = 60
+var framesThisSecond = 0
+var lastFpsUpdate = 0
+
+// Render vars
 var renderInQueue = false;
 
 function init () {
 	game = new Game();
 	menu = new Menu();
 	scene = game;
+}
+
+function calculateFPS (timestamp) {
+	// Exponential moving average
+	if (timestamp > lastFpsUpdate + 1000) { // update every second
+        fps = 0.25 * framesThisSecond + (1 - 0.25) * fps; // compute the new FPS
+ 
+        lastFpsUpdate = timestamp;
+        framesThisSecond = 0;
+    }
+    drawFPS()
+}
+
+function drawFPS () {
+	ctx.beginPath()
+	ctx.font = "20px Arial"
+	ctx.fillText("FPS: " + Math.round(fps), 170, 30)
+	ctx.closePath()
 }
 
 function updateDelta () {
@@ -423,6 +568,8 @@ function update () {
 function draw (timestamp) {
 	renderInQueue = false
 	scene.draw()
+	++framesThisSecond
+	calculateFPS(timestamp)
 }
 
 function loop () {
@@ -450,4 +597,4 @@ window.onload = function () {
 	init()
 	setInterval(loop, timestep)
 }
-},{"./Constants.js":2,"./Game.js":4,"./Keyboard.js":5,"./Menu.js":7}]},{},[9]);
+},{"./Constants.js":2,"./Game.js":4,"./Keyboard.js":6,"./Menu.js":8}]},{},[10]);

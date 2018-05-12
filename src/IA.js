@@ -1,11 +1,18 @@
-class Player {
-	constructor (x, y, team) {
+class IA {
+	constructor (x, y, xLimit, yLimit, team) {
+		// Maximum x and y
+		this.mx = xLimit
+		this.my = yLimit
+		// Actual position
 		this.x = x
 		this.y = y
+		// Old position
 		this.ox = x
 		this.oy = y
+		// X and Y speed
 		this.vx = 1
 		this.vy = 1
+
 		this.team = team
 		this.points = 0
 
@@ -36,11 +43,21 @@ class Player {
 		this.points = data.points
 	}
 
-	move (dx, dy, events) {
-		this.x += dx
-		this.y += dy
+	moveAutonomously (events) {
+		let dir = this.random_round(1,4)
+		console.log(dir)
+		switch(dir) {
+			case 1: this.x += this.vx; break
+			case 2: this.x -= this.vx; break
+			case 3: this.y += this.vy; break
+			case 4: this.y -= this.vy; break
+		}
 
-		events.publish("player_update", this.generateUpdateEvent())
+		if (this.x < 0 || this.y < 0 || this.x >= this.mx || this.y >= this.my) {
+			this.x = this.ox
+			this.y = this.oy
+		}
+		else events.publish("player_update", this.generateUpdateEvent())
 	}
 
 	update (keyboard, events) {
@@ -53,11 +70,8 @@ class Player {
 		this.ox = this.x
 		this.oy = this.y
 
-		// Update player position if necessary
-		if (keyboard.isDown(keyboard.UP)) this.move(0, -this.vy, events)
-		else if (keyboard.isDown(keyboard.LEFT)) this.move(-this.vx, 0, events)
-		else if (keyboard.isDown(keyboard.DOWN)) this.move(0, this.vy, events)
-		else if (keyboard.isDown(keyboard.RIGHT)) this.move(this.vx, 0, events)
+		// Update player position
+		this.moveAutonomously(events)
 	}
 
 	draw () {
@@ -70,6 +84,13 @@ class Player {
 		ctx.stroke()
 		ctx.closePath()
 	}
+
+	random (min, max) {
+	  	return Math.random() * (max - min + 1) + min;
+	}
+	random_round (min, max) {
+	  	return Math.floor(Math.random() * (max - min + 1)) + min;
+	}
 }
 
-module.exports = Player
+module.exports = IA

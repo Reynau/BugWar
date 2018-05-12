@@ -1,6 +1,7 @@
 const GameMap = require('./Map.js')
 const Events = require('./Events.js')
 const Player = require('./Player.js')
+const IA = require('./IA.js')
 const {STATE} = require('./Constants.js')
 
 var game_vars = {
@@ -19,8 +20,8 @@ class Game {
 		this.hud = undefined;
 
 		this.players = {
-			1: [new Player(5, 5, game_vars.map_width, game_vars.map_height, 1)],
-			2: [],
+			1: [new Player(0, 0, game_vars.map_width, game_vars.map_height, 1)],
+			2: [new IA(9, 9, game_vars.map_width, game_vars.map_height, 2)],
 			3: [],
 			4: [],
 		}
