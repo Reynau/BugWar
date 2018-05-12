@@ -1,11 +1,23 @@
-const MovingEntity = require('./MovingEntity.js')
-
-class Player extends MovingEntity {
+class Player {
 	constructor (id, x, y, xLimit, yLimit, team) {
-		super(id, x, y, xLimit, yLimit)
+		this.id = id
+		// Maximum x and y
+		this.mx = xLimit
+		this.my = yLimit
+		// Actual position
+		this.x = x
+		this.y = y
+		// Old position
+		this.ox = x
+		this.oy = y
+		// X and Y speed
+		this.vx = 1
+		this.vy = 1
 
 		this.team = team
 		this.points = 0
+
+		this.last_update_timestamp = 0;
 	}
 
 	generateUpdateEvent () {
@@ -30,6 +42,18 @@ class Player extends MovingEntity {
 		this.vy = data.vy
 		this.team = data.team
 		this.points = data.points
+	}
+
+	collideWithPlayer (players) {
+		let self = this
+		let collide = false
+		for (let team in players) {
+			players[team].forEach((player) => {
+				if (collide || player.id === self.id) return
+				collide = (player.x === self.x && player.y === self.y)
+			})
+		}
+		return collide
 	}
 
 	move (dx, dy, players, events) {
@@ -62,6 +86,17 @@ class Player extends MovingEntity {
 		else if (keyboard.isDown(keyboard.LEFT)) this.move(-this.vx, 0, players, events)
 		else if (keyboard.isDown(keyboard.DOWN)) this.move(0, this.vy, players, events)
 		else if (keyboard.isDown(keyboard.RIGHT)) this.move(this.vx, 0, players, events)
+	}
+
+	draw () {
+		ctx.beginPath()
+		ctx.rect(this.x * 15, this.y * 15, 10, 10)
+		ctx.fillStyle = "magenta"
+		ctx.fill()
+		ctx.lineWidth = 1
+		ctx.strokeStyle = "green"
+		ctx.stroke()
+		ctx.closePath()
 	}
 }
 

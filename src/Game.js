@@ -1,7 +1,7 @@
 const GameMap = require('./Map.js')
 const Events = require('./Events.js')
-const Player = require('./Player.js')
-const IA = require('./IA.js')
+const Player = require('./Entities/Player.js')
+const IA = require('./Entities/IA.js')
 const {STATE} = require('./Constants.js')
 
 var game_vars = {
@@ -12,18 +12,21 @@ var game_vars = {
 class Game {
 
 	constructor () {
+		let mx = game_vars.map_width
+		let my = game_vars.map_height
+
 		this.events = new Events();
 		this.events.subscribe("player_update", this.playerUpdateCallback())
 
-		this.map = new GameMap(game_vars.map_width, game_vars.map_height);
+		this.map = new GameMap(mx, my);
 		this.items = undefined;
 		this.hud = undefined;
 
 		this.players = {
-			1: [new Player(0, 0, game_vars.map_width, game_vars.map_height, 1)],
-			2: [new IA(9, 9, game_vars.map_width, game_vars.map_height, 2)],
-			3: [],
-			4: [],
+			1: [new Player(1, 0, 0, mx, my, 1)],
+			2: [new IA(2, 0, my-1, mx, my, 2)],
+			3: [new IA(3, mx-1, 0, mx, my, 3)],
+			4: [new IA(4, mx-1, my-1, mx, my, 4)],
 		}
 	}
 
@@ -38,7 +41,7 @@ class Game {
 	updatePlayers (keyboard) {
 		for (var team in this.players) {
 			for (let p = 0; p < this.players[team].length; ++p) {
-				this.players[team][p].update(keyboard, this.events)
+				this.players[team][p].update(this.players, keyboard, this.events)
 			}
 		}
 	}

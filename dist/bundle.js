@@ -108,6 +108,224 @@ module.exports = {
 	},
 }
 },{}],3:[function(require,module,exports){
+class IA {
+	constructor (id, x, y, xLimit, yLimit, team) {
+		this.id = id
+		// Maximum x and y
+		this.mx = xLimit
+		this.my = yLimit
+		// Actual position
+		this.x = x
+		this.y = y
+		// Old position
+		this.ox = x
+		this.oy = y
+		// X and Y speed
+		this.vx = 1
+		this.vy = 1
+
+		this.team = team
+		this.points = 0
+
+		this.last_update_timestamp = 0;
+	}
+
+	generateUpdateEvent () {
+		return {
+			x: this.x,
+			y: this.y,
+			ox: this.ox,
+			oy: this.oy,
+			vx: this.vx,
+			vy: this.vy,
+			team: this.team,
+			points: this.points,
+		}
+	}
+
+	playerGetUpdate (data) {
+		this.x = data.x
+		this.y = data.y
+		this.ox = data.ox
+		this.oy = data.oy
+		this.vx = data.vx
+		this.vy = data.vy
+		this.team = data.team
+		this.points = data.points
+	}
+
+	collideWithPlayer (players) {
+		let self = this
+		let collide = false
+		for (let team in players) {
+			players[team].forEach((player) => {
+				if (collide || player.id === self.id) return
+				collide = (player.x === self.x && player.y === self.y)
+			})
+		}
+		return collide
+	}
+
+	moveAutonomously (players, events) {
+		let dir = this.random_round(1,4)
+		console.log(dir)
+		switch(dir) {
+			case 1: this.x += this.vx; break
+			case 2: this.x -= this.vx; break
+			case 3: this.y += this.vy; break
+			case 4: this.y -= this.vy; break
+		}
+
+		if (this.x < 0 || this.y < 0 || this.x >= this.mx || this.y >= this.my) {
+			this.x = this.ox
+			this.y = this.oy
+		}
+		else if (this.collideWithPlayer(players)) {
+			this.x = this.ox
+			this.y = this.oy
+		}
+		else events.publish("player_update", this.generateUpdateEvent())
+	}
+
+	update (players, keyboard, events) {
+		// Update last timestamp
+		var timestamp = Date.now();
+		if (timestamp - this.last_update_timestamp < 500) return;
+		this.last_update_timestamp = timestamp;
+
+		// Save old position
+		this.ox = this.x
+		this.oy = this.y
+
+		// Update player position
+		this.moveAutonomously(players, events)
+	}
+
+	draw () {
+		ctx.beginPath()
+		ctx.rect(this.x * 15, this.y * 15, 10, 10)
+		ctx.fillStyle = "magenta"
+		ctx.fill()
+		ctx.lineWidth = 1
+		ctx.strokeStyle = "green"
+		ctx.stroke()
+		ctx.closePath()
+	}
+
+	random (min, max) {
+	  	return Math.random() * (max - min + 1) + min;
+	}
+	random_round (min, max) {
+	  	return Math.floor(Math.random() * (max - min + 1)) + min;
+	}
+}
+
+module.exports = IA
+},{}],4:[function(require,module,exports){
+class Player {
+	constructor (id, x, y, xLimit, yLimit, team) {
+		this.id = id
+		// Maximum x and y
+		this.mx = xLimit
+		this.my = yLimit
+		// Actual position
+		this.x = x
+		this.y = y
+		// Old position
+		this.ox = x
+		this.oy = y
+		// X and Y speed
+		this.vx = 1
+		this.vy = 1
+
+		this.team = team
+		this.points = 0
+
+		this.last_update_timestamp = 0;
+	}
+
+	generateUpdateEvent () {
+		return {
+			x: this.x,
+			y: this.y,
+			ox: this.ox,
+			oy: this.oy,
+			vx: this.vx,
+			vy: this.vy,
+			team: this.team,
+			points: this.points,
+		}
+	}
+
+	playerGetUpdate (data) {
+		this.x = data.x
+		this.y = data.y
+		this.ox = data.ox
+		this.oy = data.oy
+		this.vx = data.vx
+		this.vy = data.vy
+		this.team = data.team
+		this.points = data.points
+	}
+
+	collideWithPlayer (players) {
+		let self = this
+		let collide = false
+		for (let team in players) {
+			players[team].forEach((player) => {
+				if (collide || player.id === self.id) return
+				collide = (player.x === self.x && player.y === self.y)
+			})
+		}
+		return collide
+	}
+
+	move (dx, dy, players, events) {
+		this.x += dx
+		this.y += dy
+
+		if (this.x < 0 || this.y < 0 || this.x >= this.mx || this.y >= this.my) {
+			this.x = this.ox
+			this.y = this.oy
+		}
+		else if (this.collideWithPlayer(players)) {
+			this.x = this.ox
+			this.y = this.oy
+		}
+		else events.publish("player_update", this.generateUpdateEvent())
+	}
+
+	update (players, keyboard, events) {
+		// Update last timestamp
+		var timestamp = Date.now();
+		if (timestamp - this.last_update_timestamp < 500) return;
+		this.last_update_timestamp = timestamp;
+
+		// Save old position
+		this.ox = this.x
+		this.oy = this.y
+
+		// Update player position if necessary
+		if (keyboard.isDown(keyboard.UP)) this.move(0, -this.vy, players, events)
+		else if (keyboard.isDown(keyboard.LEFT)) this.move(-this.vx, 0, players, events)
+		else if (keyboard.isDown(keyboard.DOWN)) this.move(0, this.vy, players, events)
+		else if (keyboard.isDown(keyboard.RIGHT)) this.move(this.vx, 0, players, events)
+	}
+
+	draw () {
+		ctx.beginPath()
+		ctx.rect(this.x * 15, this.y * 15, 10, 10)
+		ctx.fillStyle = "magenta"
+		ctx.fill()
+		ctx.lineWidth = 1
+		ctx.strokeStyle = "green"
+		ctx.stroke()
+		ctx.closePath()
+	}
+}
+
+module.exports = Player
+},{}],5:[function(require,module,exports){
 class Events {
 	
 	constructor () {
@@ -150,11 +368,11 @@ class Events {
 }
 
 module.exports = Events
-},{}],4:[function(require,module,exports){
+},{}],6:[function(require,module,exports){
 const GameMap = require('./Map.js')
 const Events = require('./Events.js')
-const Player = require('./Player.js')
-const IA = require('./IA.js')
+const Player = require('./Entities/Player.js')
+const IA = require('./Entities/IA.js')
 const {STATE} = require('./Constants.js')
 
 var game_vars = {
@@ -173,10 +391,10 @@ class Game {
 		this.hud = undefined;
 
 		this.players = {
-			1: [new Player(0, 0, game_vars.map_width, game_vars.map_height, 1)],
-			2: [new IA(9, 9, game_vars.map_width, game_vars.map_height, 2)],
-			3: [],
-			4: [],
+			1: [new Player(1, 0, 0, game_vars.map_width, game_vars.map_height, 1)],
+			2: [new IA(2, 0, 9, game_vars.map_width, game_vars.map_height, 2)],
+			3: [new IA(3, 9, 0, game_vars.map_width, game_vars.map_height, 3)],
+			4: [new IA(4, 9, 9, game_vars.map_width, game_vars.map_height, 4)],
 		}
 	}
 
@@ -191,7 +409,7 @@ class Game {
 	updatePlayers (keyboard) {
 		for (var team in this.players) {
 			for (let p = 0; p < this.players[team].length; ++p) {
-				this.players[team][p].update(keyboard, this.events)
+				this.players[team][p].update(this.players, keyboard, this.events)
 			}
 		}
 	}
@@ -232,104 +450,7 @@ class Game {
 }
 
 module.exports = Game
-},{"./Constants.js":2,"./Events.js":3,"./IA.js":5,"./Map.js":7,"./Player.js":9}],5:[function(require,module,exports){
-class IA {
-	constructor (x, y, xLimit, yLimit, team) {
-		// Maximum x and y
-		this.mx = xLimit
-		this.my = yLimit
-		// Actual position
-		this.x = x
-		this.y = y
-		// Old position
-		this.ox = x
-		this.oy = y
-		// X and Y speed
-		this.vx = 1
-		this.vy = 1
-
-		this.team = team
-		this.points = 0
-
-		this.last_update_timestamp = 0;
-	}
-
-	generateUpdateEvent () {
-		return {
-			x: this.x,
-			y: this.y,
-			ox: this.ox,
-			oy: this.oy,
-			vx: this.vx,
-			vy: this.vy,
-			team: this.team,
-			points: this.points,
-		}
-	}
-
-	playerGetUpdate (data) {
-		this.x = data.x
-		this.y = data.y
-		this.ox = data.ox
-		this.oy = data.oy
-		this.vx = data.vx
-		this.vy = data.vy
-		this.team = data.team
-		this.points = data.points
-	}
-
-	moveAutonomously (events) {
-		let dir = this.random_round(1,4)
-		console.log(dir)
-		switch(dir) {
-			case 1: this.x += this.vx; break
-			case 2: this.x -= this.vx; break
-			case 3: this.y += this.vy; break
-			case 4: this.y -= this.vy; break
-		}
-
-		if (this.x < 0 || this.y < 0 || this.x >= this.mx || this.y >= this.my) {
-			this.x = this.ox
-			this.y = this.oy
-		}
-		else events.publish("player_update", this.generateUpdateEvent())
-	}
-
-	update (keyboard, events) {
-		// Update last timestamp
-		var timestamp = Date.now();
-		if (timestamp - this.last_update_timestamp < 500) return;
-		this.last_update_timestamp = timestamp;
-
-		// Save old position
-		this.ox = this.x
-		this.oy = this.y
-
-		// Update player position
-		this.moveAutonomously(events)
-	}
-
-	draw () {
-		ctx.beginPath()
-		ctx.rect(this.x * 15, this.y * 15, 10, 10)
-		ctx.fillStyle = "magenta"
-		ctx.fill()
-		ctx.lineWidth = 1
-		ctx.strokeStyle = "green"
-		ctx.stroke()
-		ctx.closePath()
-	}
-
-	random (min, max) {
-	  	return Math.random() * (max - min + 1) + min;
-	}
-	random_round (min, max) {
-	  	return Math.floor(Math.random() * (max - min + 1)) + min;
-	}
-}
-
-module.exports = IA
-},{}],6:[function(require,module,exports){
+},{"./Constants.js":2,"./Entities/IA.js":3,"./Entities/Player.js":4,"./Events.js":5,"./Map.js":8}],7:[function(require,module,exports){
 class Keyboard {
 
 	constructor () {
@@ -355,7 +476,7 @@ class Keyboard {
 }
 
 module.exports = Keyboard
-},{}],7:[function(require,module,exports){
+},{}],8:[function(require,module,exports){
 const Box = require('./Box.js')
 
 var map_vars = {
@@ -397,7 +518,7 @@ class Map {
 }
 
 module.exports = Map
-},{"./Box.js":1}],8:[function(require,module,exports){
+},{"./Box.js":1}],9:[function(require,module,exports){
 class Menu {
 
 	constructor () {
@@ -414,95 +535,6 @@ class Menu {
 }
 
 module.exports = Menu
-},{}],9:[function(require,module,exports){
-class Player {
-	constructor (x, y, xLimit, yLimit, team) {
-		// Maximum x and y
-		this.mx = xLimit
-		this.my = yLimit
-		// Actual position
-		this.x = x
-		this.y = y
-		// Old position
-		this.ox = x
-		this.oy = y
-		// X and Y speed
-		this.vx = 1
-		this.vy = 1
-
-		this.team = team
-		this.points = 0
-
-		this.last_update_timestamp = 0;
-	}
-
-	generateUpdateEvent () {
-		return {
-			x: this.x,
-			y: this.y,
-			ox: this.ox,
-			oy: this.oy,
-			vx: this.vx,
-			vy: this.vy,
-			team: this.team,
-			points: this.points,
-		}
-	}
-
-	playerGetUpdate (data) {
-		this.x = data.x
-		this.y = data.y
-		this.ox = data.ox
-		this.oy = data.oy
-		this.vx = data.vx
-		this.vy = data.vy
-		this.team = data.team
-		this.points = data.points
-	}
-
-	move (dx, dy, events) {
-		this.x += dx
-		this.y += dy
-
-		if (this.x < 0 || this.y < 0 || this.x >= this.mx || this.y >= this.my) {
-			this.x = this.ox
-			this.y = this.oy
-		}
-		else events.publish("player_update", this.generateUpdateEvent())
-
-
-	}
-
-	update (keyboard, events) {
-		// Update last timestamp
-		var timestamp = Date.now();
-		if (timestamp - this.last_update_timestamp < 500) return;
-		this.last_update_timestamp = timestamp;
-
-		// Save old position
-		this.ox = this.x
-		this.oy = this.y
-
-		// Update player position if necessary
-		if (keyboard.isDown(keyboard.UP)) this.move(0, -this.vy, events)
-		else if (keyboard.isDown(keyboard.LEFT)) this.move(-this.vx, 0, events)
-		else if (keyboard.isDown(keyboard.DOWN)) this.move(0, this.vy, events)
-		else if (keyboard.isDown(keyboard.RIGHT)) this.move(this.vx, 0, events)
-	}
-
-	draw () {
-		ctx.beginPath()
-		ctx.rect(this.x * 15, this.y * 15, 10, 10)
-		ctx.fillStyle = "magenta"
-		ctx.fill()
-		ctx.lineWidth = 1
-		ctx.strokeStyle = "green"
-		ctx.stroke()
-		ctx.closePath()
-	}
-}
-
-module.exports = Player
 },{}],10:[function(require,module,exports){
 const Game = require('./Game.js')
 const Menu = require('./Menu.js')
@@ -597,4 +629,4 @@ window.onload = function () {
 	init()
 	setInterval(loop, timestep)
 }
-},{"./Constants.js":2,"./Game.js":4,"./Keyboard.js":6,"./Menu.js":8}]},{},[10]);
+},{"./Constants.js":2,"./Game.js":6,"./Keyboard.js":7,"./Menu.js":9}]},{},[10]);
