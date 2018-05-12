@@ -50,6 +50,13 @@ class Game {
 		}
 	}
 
+	clearCanvas () {
+		ctx.beginPath()
+		ctx.fillStyle = "white"
+		ctx.fillRect(0, 0, canv.width, canv.height)
+		ctx.closePath()
+	}
+
 	update (keyboard) {
 		this.updatePlayers(keyboard);
 		// update players
@@ -61,6 +68,7 @@ class Game {
 	}
 
 	draw () {
+		this.clearCanvas()
 		this.map.draw();
 		this.drawPlayers();
 		// draw items
