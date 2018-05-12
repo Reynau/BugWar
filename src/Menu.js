@@ -1,15 +1,16 @@
-function Menu () {
+class Menu {
 
-	function update () {
-
-	}
-
-	function draw () {
+	constructor () {
 		
 	}
 
-	return {
-		update: update,
-		draw: draw,
+	update () {
+
+	}
+
+	draw () {
+		
 	}
 }
+
+module.exports = Menu

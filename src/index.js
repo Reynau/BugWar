@@ -1,40 +1,20 @@
+const Game = require('./Game.js')
+const Menu = require('./Menu.js')
+const Keyboard = require('./Keyboard.js')
+const {STATE} = require('./Constants.js')
+
+var keyboard;
 var game, menu;
 var scene;
 
-var STATE = {
-	MENU: 1,
-	GAME: 2,
-}
-
-var Key = {
-	_pressed: {},
-	
-	LEFT: 37,
-	UP: 38,
-	RIGHT: 39,
-	DOWN: 40,
-
-	isDown: function(keyCode) {
-		return this._pressed[keyCode];
-	},
-
-	onKeydown: function(event) {
-		this._pressed[event.keyCode] = true;
-	},
-
-	onKeyup: function(event) {
-		delete this._pressed[event.keyCode];
-	}
-};
-
 function init () {
-	game = Game();
-	menu = Menu();
+	game = new Game();
+	menu = new Menu();
 	scene = game;
 }
 
 function update () {
-	var state = scene.update();
+	var state = scene.update(keyboard);
 	switch (state) {
 		case STATE.GAME: scene = game; break;
 		case STATE.MENU: scene = menu; break;
@@ -54,8 +34,9 @@ window.onload = function () {
 	canv = document.getElementById("gc");
 	ctx = canv.getContext("2d");
 
-	document.addEventListener("keydown", function(event) { Key.onKeydown(event); });
-	document.addEventListener("keyup", function(event) { Key.onKeyup(event); });
+	keyboard = new Keyboard();
+	document.addEventListener("keydown", function(event) { keyboard.onKeydown(event); });
+	document.addEventListener("keyup", function(event) { keyboard.onKeyup(event); });
 
 	init();
 	setInterval(loop, 1000/30);

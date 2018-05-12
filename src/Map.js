@@ -1,36 +1,41 @@
+const Box = require('./Box.js')
+
 var map_vars = {
 	box_width: 15,
 	box_height: 15,
 }
 
-function Map (w, h) {
+class Map {
 
-	return {
-		width: w,
-		height: h,
+	constructor (width, height) {
+		this.width = width
+		this.height = height
 
-		matrix: [],
+		this.matrix = []
 
-		init: function () {
-			for (var i = 0; i < this.width; ++i) {
-				this.matrix[i] = [];
-				for (var j = 0; j < this.height; ++j) {
-					this.matrix[i][j] = Box();
-				}
+		for (var i = 0; i < this.width; ++i) {
+			this.matrix[i] = []
+			for (var j = 0; j < this.height; ++j) {
+				this.matrix[i][j] = new Box()
 			}
-		},
-
-		draw: function () {
-			for (var i = 0; i < this.width; ++i) {
-				for (var j = 0; j < this.height; ++j) {
-					var x = i * map_vars.box_width;
-					var y = j * map_vars.box_height;
-					var w = map_vars.box_width;
-					var h = map_vars.box_height;
-					this.matrix[i][j].draw(x, y, w, h);
-				}
-			}
-		},
+		}
 	}
-	
+
+	draw () {
+		for (var i = 0; i < this.width; ++i) {
+			for (var j = 0; j < this.height; ++j) {
+				var x = i * map_vars.box_width
+				var y = j * map_vars.box_height
+				var w = map_vars.box_width
+				var h = map_vars.box_height
+				this.matrix[i][j].draw(x, y, w, h)
+			}
+		}
+	}
+
+	playerMovedTo (x, y, team) {
+		this.matrix[x][y].incrementLevel(team);
+	}
 }
+
+module.exports = Map
