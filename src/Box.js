@@ -40,6 +40,7 @@ class Box {
 		
 
 	incrementLevel (team) {
+		console.log("Incrementing level of box")
 		// Cannot increment level of a blocked box
 		if (this.blocked) return
 
@@ -88,7 +89,7 @@ class Box {
 		var stroke_color = (this.blocked ? "white" : "black")
 
 		ctx.beginPath()
-		ctx.rect(y, x, w, h)
+		ctx.rect(x, y, w, h)
 		ctx.fillStyle = color
 		ctx.fill()
 		ctx.lineWidth = 1

@@ -36,24 +36,33 @@ class Player {
 		this.points = data.points
 	}
 
-	update (keyboard, events) {
-		var timestamp = Date.now();
-		if (timestamp - this.last_update_timestamp < 1000) return;
-		this.last_update_timestamp = timestamp;
-
-		this.ox = this.x
-		this.oy = this.y
-		if (keyboard.isDown(keyboard.UP)) this.y -= this.vy
-		if (keyboard.isDown(keyboard.LEFT)) this.x -= this.vx
-		if (keyboard.isDown(keyboard.DOWN)) this.y += this.vy
-		if (keyboard.isDown(keyboard.RIGHT)) this.x += this.vx
+	move (dx, dy, events) {
+		this.x += dx
+		this.y += dy
 
 		events.publish("player_update", this.generateUpdateEvent())
 	}
 
+	update (keyboard, events) {
+		// Update last timestamp
+		var timestamp = Date.now();
+		if (timestamp - this.last_update_timestamp < 500) return;
+		this.last_update_timestamp = timestamp;
+
+		// Save old position
+		this.ox = this.x
+		this.oy = this.y
+
+		// Update player position if necessary
+		if (keyboard.isDown(keyboard.UP)) this.move(0, -this.vy, events)
+		else if (keyboard.isDown(keyboard.LEFT)) this.move(-this.vx, 0, events)
+		else if (keyboard.isDown(keyboard.DOWN)) this.move(0, this.vy, events)
+		else if (keyboard.isDown(keyboard.RIGHT)) this.move(this.vx, 0, events)
+	}
+
 	draw () {
 		ctx.beginPath()
-		ctx.rect(this.y * 15, this.x * 15, 10, 10)
+		ctx.rect(this.x * 15, this.y * 15, 10, 10)
 		ctx.fillStyle = "magenta"
 		ctx.fill()
 		ctx.lineWidth = 1

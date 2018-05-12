@@ -7,10 +7,19 @@ var keyboard;
 var game, menu;
 var scene;
 
+var lastFrame = 0;
+var delta = 0;
+var renderInQueue = false;
+
 function init () {
 	game = new Game();
 	menu = new Menu();
 	scene = game;
+}
+
+function updateDelta (timestamp) {
+	delta = timestamp - lastFrame
+	lastFrame = timestamp
 }
 
 function update () {
@@ -22,12 +31,19 @@ function update () {
 }
 
 function draw () {
-	scene.draw();
+	renderInQueue = false
+	scene.draw()
 }
 
-function loop () {
-	update();
-	draw();
+function loop (timestamp) {
+	// place the rAF *before* the draw() to assure as close to
+	// 60fps with the setTimeout fallback.
+	if (!renderInQueue) { 
+		window.requestAnimationFrame(draw)
+		renderInQueue = true
+	}
+	updateDelta(timestamp)
+	update()
 }
 
 window.onload = function () {
@@ -38,6 +54,6 @@ window.onload = function () {
 	document.addEventListener("keydown", function(event) { keyboard.onKeydown(event); });
 	document.addEventListener("keyup", function(event) { keyboard.onKeyup(event); });
 
-	init();
-	setInterval(loop, 1000/30);
+	init()
+	setInterval(loop, 16)
 }

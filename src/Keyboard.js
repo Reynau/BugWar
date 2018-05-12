@@ -3,10 +3,10 @@ class Keyboard {
 	constructor () {
 		this._pressed = {}
 
-		this.LEFT = 37
-		this.UP = 38
-		this.RIGHT = 39
-		this.DOWN = 40
+		this.LEFT = 65
+		this.UP = 87
+		this.RIGHT = 68
+		this.DOWN = 83
 	}
 	
 	isDown (keyCode) {
@@ -15,12 +15,10 @@ class Keyboard {
 
 	onKeydown (event) {
 		this._pressed[event.keyCode] = true
-		console.log("Key Pressed: " + event.keyCode)
 	}
 
 	onKeyup (event) {
 		delete this._pressed[event.keyCode]
-		console.log("Key Released: " + event.keyCode)
 	}
 }
 

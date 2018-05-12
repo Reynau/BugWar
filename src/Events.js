@@ -34,6 +34,7 @@ class Events {
 			this.events[eventName].forEach((fn) => {
 				this.eventData[eventName].forEach((data) => fn(data))
 			})
+			this.eventData[eventName] = []
 		}
 	}
 }
