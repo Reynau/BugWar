@@ -4,7 +4,7 @@
   "description": "",
   "main": "src/index.js",
   "scripts": {
-    "build": "browserify src/index.js -o dist/bundle.js && echo 'built!'",
+    "build": "browserify src/index.js -o docs/bundle.js && echo 'built!'",
     "start_server": "node src/Server/server.js",
     "start": "npm run build && npm run start_server",
     "test": "echo \"Error: no test specified\" && exit 1"
