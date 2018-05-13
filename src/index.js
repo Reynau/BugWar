@@ -1,52 +1,36 @@
 const Client = require('./Client/Client.js')
-const Game = require('./Game.js')
-const Menu = require('./Menu.js')
+const SinglePlayer = require('./Game/SinglePlayer.js')
+const MultiPlayer = require('./Game/MultiPlayer.js')
+const Menu = require('./Menu/Menu.js')
 const Keyboard = require('./Tools/Keyboard.js')
+const Mouse = require('./Tools/Mouse.js')
+const FPS = require('./Tools/FPS.js')
 const {STATE} = require('./Constants.js')
 
 var client;
 
 // Game vars
-var keyboard;
-var game, menu;
-var scene;
+var fps, mouse, keyboard
+var game, menu
+var scene
 
-// Time vars
 var timestep = 1000 / 60
-var lastFrame = Date.now();
+var lastFrame = Date.now()
 var delta = 0
-
-// FPS vars
-var fps = 60
-var framesThisSecond = 0
-var lastFpsUpdate = 0
 
 // Render vars
 var renderInQueue = false;
 
 function init () {
-	game = new Game()
-	menu = new Menu()
-	scene = game
-
-	client = new Client()
+	fps = new FPS()
+	menu = new Menu(mouse)
+	scene = menu
 }
 
-function calculateFPS (timestamp) {
-	// Exponential moving average
-	if (timestamp > lastFpsUpdate + 1000) { // update every second
-        fps = 0.25 * framesThisSecond + (1 - 0.25) * fps // compute the new FPS
- 
-        lastFpsUpdate = timestamp
-        framesThisSecond = 0
-    }
-    drawFPS()
-}
-
-function drawFPS () {
+function clearCanvas () {
 	ctx.beginPath()
-	ctx.font = "20px Arial"
-	ctx.fillText("FPS: " + Math.round(fps), 170, 30)
+	ctx.fillStyle = "white"
+	ctx.fillRect(0, 0, canv.width, canv.height)
 	ctx.closePath()
 }
 
@@ -57,18 +41,23 @@ function updateDelta () {
 }
 
 function update () {
-	var state = scene.update(keyboard);
-	switch (state) {
-		case STATE.GAME: scene = game; break
+	var changeState = scene.update(mouse, keyboard);
+	switch (changeState) {
 		case STATE.MENU: scene = menu; break
+		case STATE.SINGLEPLAYER_GAME: scene = new SinglePlayer(); break
+		//case STATE.MULTIPLAYER_GAME: scene = new MultiPlayer(serverConnectionData); break
 	}
+
+	mouse.clean()
 }
 
 function draw (timestamp) {
 	renderInQueue = false
+	clearCanvas()
 	scene.draw()
-	++framesThisSecond
-	calculateFPS(timestamp)
+	fps.incrementFramesThisSecond()
+	fps.update(timestamp)
+	fps.draw()
 }
 
 function loop () {
@@ -89,9 +78,12 @@ window.onload = function () {
 	canv = document.getElementById("gc")
 	ctx = canv.getContext("2d")
 
-	keyboard = new Keyboard();
+	keyboard = new Keyboard()
+	mouse = new Mouse(canv)
 	document.addEventListener("keydown", function(event) { keyboard.onKeydown(event) })
 	document.addEventListener("keyup", function(event) { keyboard.onKeyup(event) })
+	canv.addEventListener('click', mouse.onMouseClick())
+	canv.addEventListener('mousemove', mouse.onMouseMove())
 
 	init()
 	setInterval(loop, timestep)
