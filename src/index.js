@@ -1,7 +1,10 @@
+const Client = require('./Client/Client.js')
 const Game = require('./Game.js')
 const Menu = require('./Menu.js')
 const Keyboard = require('./Tools/Keyboard.js')
 const {STATE} = require('./Constants.js')
+
+var client;
 
 // Game vars
 var keyboard;
@@ -22,18 +25,20 @@ var lastFpsUpdate = 0
 var renderInQueue = false;
 
 function init () {
-	game = new Game();
-	menu = new Menu();
-	scene = game;
+	game = new Game()
+	menu = new Menu()
+	scene = game
+
+	client = new Client()
 }
 
 function calculateFPS (timestamp) {
 	// Exponential moving average
 	if (timestamp > lastFpsUpdate + 1000) { // update every second
-        fps = 0.25 * framesThisSecond + (1 - 0.25) * fps; // compute the new FPS
+        fps = 0.25 * framesThisSecond + (1 - 0.25) * fps // compute the new FPS
  
-        lastFpsUpdate = timestamp;
-        framesThisSecond = 0;
+        lastFpsUpdate = timestamp
+        framesThisSecond = 0
     }
     drawFPS()
 }
@@ -54,8 +59,8 @@ function updateDelta () {
 function update () {
 	var state = scene.update(keyboard);
 	switch (state) {
-		case STATE.GAME: scene = game; break;
-		case STATE.MENU: scene = menu; break;
+		case STATE.GAME: scene = game; break
+		case STATE.MENU: scene = menu; break
 	}
 }
 
@@ -81,12 +86,12 @@ function loop () {
 }
 
 window.onload = function () {
-	canv = document.getElementById("gc");
-	ctx = canv.getContext("2d");
+	canv = document.getElementById("gc")
+	ctx = canv.getContext("2d")
 
 	keyboard = new Keyboard();
-	document.addEventListener("keydown", function(event) { keyboard.onKeydown(event); });
-	document.addEventListener("keyup", function(event) { keyboard.onKeyup(event); });
+	document.addEventListener("keydown", function(event) { keyboard.onKeydown(event) })
+	document.addEventListener("keyup", function(event) { keyboard.onKeyup(event) })
 
 	init()
 	setInterval(loop, timestep)

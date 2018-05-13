@@ -1,11 +1,29 @@
 (function(){function r(e,n,t){function o(i,f){if(!n[i]){if(!e[i]){var c="function"==typeof require&&require;if(!f&&c)return c(i,!0);if(u)return u(i,!0);var a=new Error("Cannot find module '"+i+"'");throw a.code="MODULE_NOT_FOUND",a}var p=n[i]={exports:{}};e[i][0].call(p.exports,function(r){var n=e[i][1][r];return o(n||r)},p,p.exports,r,e,n,t)}return n[i].exports}for(var u="function"==typeof require&&require,i=0;i<t.length;i++)o(t[i]);return o}return r})()({1:[function(require,module,exports){
+class Client {
+
+	constructor (playerMoveCallback) {
+		var self = this
+
+		this.socket = io.connect('http://localhost');
+
+		this.socket.on('playerMove', playerMoveCallback)
+		
+		this.socket.on('this', function (data) {
+			console.log(data);
+			self.socket.emit('my other event', { my: 'data' });
+		});
+	}
+}
+
+module.exports = Client
+},{}],2:[function(require,module,exports){
 module.exports = {
 	STATE: {
 		MENU: 1,
 		GAME: 2,
 	},
 }
-},{}],2:[function(require,module,exports){
+},{}],3:[function(require,module,exports){
 class IA {
 	constructor (id, x, y, xLimit, yLimit, team) {
 		this.id = id
@@ -118,7 +136,7 @@ class IA {
 }
 
 module.exports = IA
-},{}],3:[function(require,module,exports){
+},{}],4:[function(require,module,exports){
 class Player {
 	constructor (id, x, y, xLimit, yLimit, team) {
 		this.id = id
@@ -222,7 +240,7 @@ class Player {
 }
 
 module.exports = Player
-},{}],4:[function(require,module,exports){
+},{}],5:[function(require,module,exports){
 const GameMap = require('./Map/Map.js')
 const Events = require('./Tools/Events.js')
 const Player = require('./Entities/Player.js')
@@ -309,7 +327,7 @@ class Game {
 }
 
 module.exports = Game
-},{"./Constants.js":1,"./Entities/IA.js":2,"./Entities/Player.js":3,"./Map/Map.js":6,"./Tools/Events.js":8}],5:[function(require,module,exports){
+},{"./Constants.js":2,"./Entities/IA.js":3,"./Entities/Player.js":4,"./Map/Map.js":7,"./Tools/Events.js":9}],6:[function(require,module,exports){
 var COLORS = {
 	NEUTRAL: '#ababab',
 
@@ -415,7 +433,7 @@ class Box {
 }
 
 module.exports = Box
-},{}],6:[function(require,module,exports){
+},{}],7:[function(require,module,exports){
 const Box = require('./Box.js')
 
 var map_vars = {
@@ -560,7 +578,7 @@ class Map {
 }
 
 module.exports = Map
-},{"./Box.js":5}],7:[function(require,module,exports){
+},{"./Box.js":6}],8:[function(require,module,exports){
 class Menu {
 
 	constructor () {
@@ -577,7 +595,7 @@ class Menu {
 }
 
 module.exports = Menu
-},{}],8:[function(require,module,exports){
+},{}],9:[function(require,module,exports){
 class Events {
 	
 	constructor () {
@@ -620,7 +638,7 @@ class Events {
 }
 
 module.exports = Events
-},{}],9:[function(require,module,exports){
+},{}],10:[function(require,module,exports){
 class Keyboard {
 
 	constructor () {
@@ -646,11 +664,14 @@ class Keyboard {
 }
 
 module.exports = Keyboard
-},{}],10:[function(require,module,exports){
+},{}],11:[function(require,module,exports){
+const Client = require('./Client/Client.js')
 const Game = require('./Game.js')
 const Menu = require('./Menu.js')
 const Keyboard = require('./Tools/Keyboard.js')
 const {STATE} = require('./Constants.js')
+
+var client;
 
 // Game vars
 var keyboard;
@@ -671,18 +692,20 @@ var lastFpsUpdate = 0
 var renderInQueue = false;
 
 function init () {
-	game = new Game();
-	menu = new Menu();
-	scene = game;
+	game = new Game()
+	menu = new Menu()
+	scene = game
+
+	client = new Client()
 }
 
 function calculateFPS (timestamp) {
 	// Exponential moving average
 	if (timestamp > lastFpsUpdate + 1000) { // update every second
-        fps = 0.25 * framesThisSecond + (1 - 0.25) * fps; // compute the new FPS
+        fps = 0.25 * framesThisSecond + (1 - 0.25) * fps // compute the new FPS
  
-        lastFpsUpdate = timestamp;
-        framesThisSecond = 0;
+        lastFpsUpdate = timestamp
+        framesThisSecond = 0
     }
     drawFPS()
 }
@@ -703,8 +726,8 @@ function updateDelta () {
 function update () {
 	var state = scene.update(keyboard);
 	switch (state) {
-		case STATE.GAME: scene = game; break;
-		case STATE.MENU: scene = menu; break;
+		case STATE.GAME: scene = game; break
+		case STATE.MENU: scene = menu; break
 	}
 }
 
@@ -730,14 +753,14 @@ function loop () {
 }
 
 window.onload = function () {
-	canv = document.getElementById("gc");
-	ctx = canv.getContext("2d");
+	canv = document.getElementById("gc")
+	ctx = canv.getContext("2d")
 
 	keyboard = new Keyboard();
-	document.addEventListener("keydown", function(event) { keyboard.onKeydown(event); });
-	document.addEventListener("keyup", function(event) { keyboard.onKeyup(event); });
+	document.addEventListener("keydown", function(event) { keyboard.onKeydown(event) })
+	document.addEventListener("keyup", function(event) { keyboard.onKeyup(event) })
 
 	init()
 	setInterval(loop, timestep)
 }
-},{"./Constants.js":1,"./Game.js":4,"./Menu.js":7,"./Tools/Keyboard.js":9}]},{},[10]);
+},{"./Client/Client.js":1,"./Constants.js":2,"./Game.js":5,"./Menu.js":8,"./Tools/Keyboard.js":10}]},{},[11]);
