@@ -1,6 +1,6 @@
 const Game = require('./Game.js')
 const Menu = require('./Menu.js')
-const Keyboard = require('./Keyboard.js')
+const Keyboard = require('./Tools/Keyboard.js')
 const {STATE} = require('./Constants.js')
 
 // Game vars

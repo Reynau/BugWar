@@ -58,7 +58,6 @@ class IA {
 
 	moveAutonomously (players, events) {
 		let dir = this.random_round(1,4)
-		console.log(dir)
 		switch(dir) {
 			case 1: this.x += this.vx; break
 			case 2: this.x -= this.vx; break

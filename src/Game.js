@@ -1,5 +1,5 @@
-const GameMap = require('./Map.js')
-const Events = require('./Events.js')
+const GameMap = require('./Map/Map.js')
+const Events = require('./Tools/Events.js')
 const Player = require('./Entities/Player.js')
 const IA = require('./Entities/IA.js')
 const {STATE} = require('./Constants.js')
@@ -15,18 +15,20 @@ class Game {
 		let mx = game_vars.map_width
 		let my = game_vars.map_height
 
+		this.map = new GameMap(mx, my);
+
 		this.events = new Events();
 		this.events.subscribe("player_update", this.playerUpdateCallback())
+		this.events.subscribe("player_update", this.map.update())
 
-		this.map = new GameMap(mx, my);
 		this.items = undefined;
 		this.hud = undefined;
 
 		this.players = {
 			1: [new Player(1, 0, 0, mx, my, 1)],
-			2: [new IA(2, 0, my-1, mx, my, 2)],
-			3: [new IA(3, mx-1, 0, mx, my, 3)],
-			4: [new IA(4, mx-1, my-1, mx, my, 4)],
+			2: [/*new IA(2, 0, my-1, mx, my, 2)*/],
+			3: [/*new IA(3, mx-1, 0, mx, my, 3)*/],
+			4: [/*new IA(4, mx-1, my-1, mx, my, 4)*/],
 		}
 	}
 

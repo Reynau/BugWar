@@ -37,6 +37,10 @@ class Box {
 		this.level = 0
 		this.blocked = false
 	}
+
+	isBlockedBy (team) {
+		return (this.team === team && this.blocked)
+	}
 		
 
 	incrementLevel (team) {
