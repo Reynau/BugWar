@@ -19,7 +19,7 @@ class SinglePlayer {
 
 		this.events = new Events();
 		this.events.subscribe("player_update", this.playerUpdateCallback())
-		this.events.subscribe("player_update", this.map.update())
+		this.events.subscribe("player_update", this.mapUpdateCallback())
 
 		this.items = undefined;
 		this.hud = undefined;
@@ -38,6 +38,14 @@ class SinglePlayer {
 		})
 	}
 
+	mapUpdateCallback () {
+		let self = this
+		return function (playerData) {
+			let points = self.map.searchClosedPolygon(playerData)
+			self.updatePlayerPoints(playerData.team, playerData.id, points)
+		}
+	}
+
 	playerUpdateCallback () {
 		let self = this
 		return function (playerData) {
@@ -54,6 +62,33 @@ class SinglePlayer {
 		}
 	}
 
+	drawText (x, y, text) {
+		ctx.beginPath()
+		ctx.font = "20px Arial"
+		ctx.fillStyle = "black"
+		ctx.fillText(text, x, y)
+		ctx.closePath()
+	}
+
+	drawTeamPoints () {
+		let y = 25
+		let count = 1
+		for (let team in this.players) {
+			let points = 0
+			for (let p = 0; p < this.players[team].length; ++p) {
+				points += this.players[team][p].points
+			}
+			ctx.beginPath()
+			ctx.font = "20px Arial"
+			ctx.fillStyle = "black"
+			ctx.textAlign="start"
+			ctx.fillText("Team " + team + " points: " + points, canv.width - 350, y * team)
+			ctx.closePath()
+			//this.drawText("Team " + team + " points: " + points, canv.width - 250, y * count)
+			++count
+		}
+	}
+
 	drawPlayers () {
 		for (let team in this.players) {
 			for (let p = 0; p < this.players[team].length; ++p) {
@@ -63,18 +98,19 @@ class SinglePlayer {
 	}
 
 	update (mouse, keyboard) {
-		this.updatePlayers(keyboard);
+		this.updatePlayers(keyboard)
 		// update players
 		// update items
 		// update map
 		// update hud
-		this.events.transmit();
-		return STATE.GAME;
+		this.events.transmit()
+		return STATE.GAME
 	}
 
 	draw () {
-		this.map.draw();
-		this.drawPlayers();
+		this.map.draw()
+		this.drawPlayers()
+		this.drawTeamPoints()
 		// draw items
 		// draw players
 		// draw hud

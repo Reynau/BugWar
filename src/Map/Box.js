@@ -45,24 +45,42 @@ class Box {
 
 	incrementLevel (team) {
 		// Cannot increment level of a blocked box
-		if (this.blocked) return
+		if (this.blocked) return 0
 
+		let points = 0
 		// If team is different, change to new team
-		if (this.team !== team) this.changeTeam(team)
+		if (this.team !== team) {
+			if (this.team !== 0) points += this.level * 10
+			else points += 5 // Neutral box
+			this.changeTeam(team)
+		}
 		else {
 			this.level += 1
-			if (this.level === 4) this.blocked = true
+			points += this.level * 5
+			if (this.level === 4) {
+				this.blocked = true
+				points += 10
+			}
 		}
+		return points
 	}
 
 	blockBox (team) {
 		// Cannot change a blocked box
-		if (this.blocked) return false
+		if (this.blocked) return 0
+
+		let points = 0
+		if (this.team !== 0 && this.team !== team) {
+			points += this.level * 10
+		}
 
 		this.team = team
 		this.level = 4
 		this.blocked = true
-		return true
+
+		points += 60 //1*5 + 2*5 + 3*5 + 4*5 + 10
+
+		return points
 	}
 
 	changeTeam (team) {

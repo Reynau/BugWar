@@ -66,8 +66,9 @@ class Map {
 	}
 
 	paintArea (x, y, team) {
-		let visited = this.getBlankMap()
+		let points = 0
 
+		let visited = this.getBlankMap()
 		let queue = []
 		queue.push({x:x, y:y})
 
@@ -76,7 +77,7 @@ class Map {
 			let x = elem.x
 			let y = elem.y
 			visited[x][y] = 1
-			this.matrix[x][y].blockBox(team)
+			points += this.matrix[x][y].blockBox(team)
 
 			for (let i = -1; i <= 1; ++i) {
 				for (let j = -1; j <= 1; ++j) {
@@ -95,14 +96,18 @@ class Map {
 				}
 			}
 		}
+
+		return points
 	}
 
 	searchClosedPolygon (data) {
+		let points = 0
+
 		let x = data.x
 		let y = data.y
 		let team = data.team
 
-		if (!this.matrix[x][y].blocked) return
+		if (!this.matrix[x][y].blocked) return 0
 
 		// Start bfs in each non-blocked direction
 		for (let i = -1; i <= 1; ++i) {
@@ -112,16 +117,11 @@ class Map {
 				let ny = y+j
 
 				if (this.isOutOfBounds(nx, ny) || this.matrix[nx][ny].isBlockedBy(team)) continue
-				if (!this.findWall(nx, ny, team)) this.paintArea(nx, ny, team)
+				if (!this.findWall(nx, ny, team)) points += this.paintArea(nx, ny, team)
 			}
 		}
-	}
 
-	update () {
-		var self = this
-		return function (data) {
-			self.searchClosedPolygon(data)
-		}
+		return points
 	}
 
 	draw () {
@@ -137,8 +137,8 @@ class Map {
 	}
 
 	playerMovedTo (x, y, team) {
-		this.matrix[x][y].incrementLevel(team)
-		return 0
+		let points = this.matrix[x][y].incrementLevel(team)
+		return points // Verbose but clear
 	}
 }
 

@@ -1,59 +1,11 @@
-class IA {
+const MovingEntity = require('./MovingEntity.js')
+
+class IA extends MovingEntity {
 	constructor (id, x, y, xLimit, yLimit, team) {
-		this.id = id
-		// Maximum x and y
-		this.mx = xLimit
-		this.my = yLimit
-		// Actual position
-		this.x = x
-		this.y = y
-		// Old position
-		this.ox = x
-		this.oy = y
-		// X and Y speed
-		this.vx = 1
-		this.vy = 1
+		super(id, x, y, xLimit, yLimit)
 
 		this.team = team
 		this.points = 0
-
-		this.last_update_timestamp = 0;
-	}
-
-	generateUpdateEvent () {
-		return {
-			x: this.x,
-			y: this.y,
-			ox: this.ox,
-			oy: this.oy,
-			vx: this.vx,
-			vy: this.vy,
-			team: this.team,
-			points: this.points,
-		}
-	}
-
-	playerGetUpdate (data) {
-		this.x = data.x
-		this.y = data.y
-		this.ox = data.ox
-		this.oy = data.oy
-		this.vx = data.vx
-		this.vy = data.vy
-		this.team = data.team
-		this.points = data.points
-	}
-
-	collideWithPlayer (players) {
-		let self = this
-		let collide = false
-		for (let team in players) {
-			players[team].forEach((player) => {
-				if (collide || player.id === self.id) return
-				collide = (player.x === self.x && player.y === self.y)
-			})
-		}
-		return collide
 	}
 
 	moveAutonomously (players, events) {
@@ -90,20 +42,10 @@ class IA {
 		this.moveAutonomously(players, events)
 	}
 
-	draw () {
-		ctx.beginPath()
-		ctx.rect(this.x * 15, this.y * 15, 10, 10)
-		ctx.fillStyle = "magenta"
-		ctx.fill()
-		ctx.lineWidth = 1
-		ctx.strokeStyle = "green"
-		ctx.stroke()
-		ctx.closePath()
-	}
-
 	random (min, max) {
 	  	return Math.random() * (max - min + 1) + min;
 	}
+
 	random_round (min, max) {
 	  	return Math.floor(Math.random() * (max - min + 1)) + min;
 	}

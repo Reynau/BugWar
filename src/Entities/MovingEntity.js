@@ -17,6 +17,42 @@ class MovingEntity extends Entity {
 		this.last_update_timestamp = 0
 	}
 
+	generateUpdateEvent () {
+		return {
+			id: this.id,
+			x: this.x,
+			y: this.y,
+			ox: this.ox,
+			oy: this.oy,
+			vx: this.vx,
+			vy: this.vy,
+			team: this.team,
+			points: this.points,
+		}
+	}
+
+	playerGetUpdate (data) {
+		if (data.id !== this.id) {
+			console.log("Player id and data id is not the same!")
+			return
+		}
+		this.x = data.x
+		this.y = data.y
+		this.ox = data.ox
+		this.oy = data.oy
+		this.vx = data.vx
+		this.vy = data.vy
+		this.team = data.team
+		this.points = data.points
+	}
+
+	incrementPoints (points) {
+		if (!Number.isInteger(points)) {
+			console.log("Invalid increment")
+		}
+		else this.points += points
+	}
+
 	collideWithPlayer (players) {
 		let self = this
 		let collide = false

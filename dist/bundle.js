@@ -25,62 +25,25 @@ module.exports = {
 	},
 }
 },{}],3:[function(require,module,exports){
-class IA {
-	constructor (id, x, y, xLimit, yLimit, team) {
+class Entity {
+
+	constructor (id, x, y) {
 		this.id = id
-		// Maximum x and y
-		this.mx = xLimit
-		this.my = yLimit
-		// Actual position
 		this.x = x
 		this.y = y
-		// Old position
-		this.ox = x
-		this.oy = y
-		// X and Y speed
-		this.vx = 1
-		this.vy = 1
+	}
+}
+
+module.exports = Entity
+},{}],4:[function(require,module,exports){
+const MovingEntity = require('./MovingEntity.js')
+
+class IA extends MovingEntity {
+	constructor (id, x, y, xLimit, yLimit, team) {
+		super(id, x, y, xLimit, yLimit)
 
 		this.team = team
 		this.points = 0
-
-		this.last_update_timestamp = 0;
-	}
-
-	generateUpdateEvent () {
-		return {
-			x: this.x,
-			y: this.y,
-			ox: this.ox,
-			oy: this.oy,
-			vx: this.vx,
-			vy: this.vy,
-			team: this.team,
-			points: this.points,
-		}
-	}
-
-	playerGetUpdate (data) {
-		this.x = data.x
-		this.y = data.y
-		this.ox = data.ox
-		this.oy = data.oy
-		this.vx = data.vx
-		this.vy = data.vy
-		this.team = data.team
-		this.points = data.points
-	}
-
-	collideWithPlayer (players) {
-		let self = this
-		let collide = false
-		for (let team in players) {
-			players[team].forEach((player) => {
-				if (collide || player.id === self.id) return
-				collide = (player.x === self.x && player.y === self.y)
-			})
-		}
-		return collide
 	}
 
 	moveAutonomously (players, events) {
@@ -117,36 +80,26 @@ class IA {
 		this.moveAutonomously(players, events)
 	}
 
-	draw () {
-		ctx.beginPath()
-		ctx.rect(this.x * 15, this.y * 15, 10, 10)
-		ctx.fillStyle = "magenta"
-		ctx.fill()
-		ctx.lineWidth = 1
-		ctx.strokeStyle = "green"
-		ctx.stroke()
-		ctx.closePath()
-	}
-
 	random (min, max) {
 	  	return Math.random() * (max - min + 1) + min;
 	}
+
 	random_round (min, max) {
 	  	return Math.floor(Math.random() * (max - min + 1)) + min;
 	}
 }
 
 module.exports = IA
-},{}],4:[function(require,module,exports){
-class Player {
-	constructor (id, x, y, xLimit, yLimit, team) {
-		this.id = id
+},{"./MovingEntity.js":5}],5:[function(require,module,exports){
+const Entity = require('./Entity.js')
+
+class MovingEntity extends Entity {
+
+	constructor (id, x, y, xLimit, yLimit) {
+		super(id, x, y)
 		// Maximum x and y
 		this.mx = xLimit
 		this.my = yLimit
-		// Actual position
-		this.x = x
-		this.y = y
 		// Old position
 		this.ox = x
 		this.oy = y
@@ -154,10 +107,7 @@ class Player {
 		this.vx = 1
 		this.vy = 1
 
-		this.team = team
-		this.points = 0
-
-		this.last_update_timestamp = 0;
+		this.last_update_timestamp = 0
 	}
 
 	generateUpdateEvent () {
@@ -189,6 +139,13 @@ class Player {
 		this.points = data.points
 	}
 
+	incrementPoints (points) {
+		if (!Number.isInteger(points)) {
+			console.log("Invalid increment")
+		}
+		else this.points += points
+	}
+
 	collideWithPlayer (players) {
 		let self = this
 		let collide = false
@@ -201,8 +158,28 @@ class Player {
 		return collide
 	}
 
-	incrementPoints (points) {
-		this.points += points
+	draw () {
+		ctx.beginPath()
+		ctx.rect(this.x * 15, this.y * 15, 10, 10)
+		ctx.fillStyle = "magenta"
+		ctx.fill()
+		ctx.lineWidth = 1
+		ctx.strokeStyle = "green"
+		ctx.stroke()
+		ctx.closePath()
+	}
+}
+
+module.exports = MovingEntity
+},{"./Entity.js":3}],6:[function(require,module,exports){
+const MovingEntity = require('./MovingEntity.js')
+
+class Player extends MovingEntity {
+	constructor (id, x, y, xLimit, yLimit, team) {
+		super(id, x, y, xLimit, yLimit)
+
+		this.team = team
+		this.points = 0
 	}
 
 	move (dx, dy, players, events) {
@@ -250,7 +227,7 @@ class Player {
 }
 
 module.exports = Player
-},{}],5:[function(require,module,exports){
+},{"./MovingEntity.js":5}],7:[function(require,module,exports){
 const GameMap = require('../Map/Map.js')
 const Events = require('../Tools/Events.js')
 const Player = require('../Entities/Player.js')
@@ -329,7 +306,7 @@ class MultiPlayer {
 }
 
 module.exports = MultiPlayer
-},{"../Constants.js":2,"../Entities/IA.js":3,"../Entities/Player.js":4,"../Map/Map.js":8,"../Tools/Events.js":11}],6:[function(require,module,exports){
+},{"../Constants.js":2,"../Entities/IA.js":4,"../Entities/Player.js":6,"../Map/Map.js":10,"../Tools/Events.js":13}],8:[function(require,module,exports){
 const GameMap = require('../Map/Map.js')
 const Events = require('../Tools/Events.js')
 const Player = require('../Entities/Player.js')
@@ -351,7 +328,7 @@ class SinglePlayer {
 
 		this.events = new Events();
 		this.events.subscribe("player_update", this.playerUpdateCallback())
-		this.events.subscribe("player_update", this.map.update())
+		this.events.subscribe("player_update", this.mapUpdateCallback())
 
 		this.items = undefined;
 		this.hud = undefined;
@@ -370,6 +347,13 @@ class SinglePlayer {
 		})
 	}
 
+	mapUpdateCallback () {
+		let self = this
+		return function (playerData) {
+			let points = self.map.searchClosedPolygon(playerData)
+			self.updatePlayerPoints(playerData.team, playerData.id, points)
+		}
+	}
 
 	playerUpdateCallback () {
 		let self = this
@@ -387,6 +371,33 @@ class SinglePlayer {
 		}
 	}
 
+	drawText (x, y, text) {
+		ctx.beginPath()
+		ctx.font = "20px Arial"
+		ctx.fillStyle = "black"
+		ctx.fillText(text, x, y)
+		ctx.closePath()
+	}
+
+	drawTeamPoints () {
+		let y = 25
+		let count = 1
+		for (let team in this.players) {
+			let points = 0
+			for (let p = 0; p < this.players[team].length; ++p) {
+				points += this.players[team][p].points
+			}
+			ctx.beginPath()
+			ctx.font = "20px Arial"
+			ctx.fillStyle = "black"
+			ctx.textAlign="start"
+			ctx.fillText("Team " + team + " points: " + points, canv.width - 350, y * team)
+			ctx.closePath()
+			//this.drawText("Team " + team + " points: " + points, canv.width - 250, y * count)
+			++count
+		}
+	}
+
 	drawPlayers () {
 		for (let team in this.players) {
 			for (let p = 0; p < this.players[team].length; ++p) {
@@ -396,18 +407,19 @@ class SinglePlayer {
 	}
 
 	update (mouse, keyboard) {
-		this.updatePlayers(keyboard);
+		this.updatePlayers(keyboard)
 		// update players
 		// update items
 		// update map
 		// update hud
-		this.events.transmit();
-		return STATE.GAME;
+		this.events.transmit()
+		return STATE.GAME
 	}
 
 	draw () {
-		this.map.draw();
-		this.drawPlayers();
+		this.map.draw()
+		this.drawPlayers()
+		this.drawTeamPoints()
 		// draw items
 		// draw players
 		// draw hud
@@ -415,7 +427,7 @@ class SinglePlayer {
 }
 
 module.exports = SinglePlayer
-},{"../Constants.js":2,"../Entities/IA.js":3,"../Entities/Player.js":4,"../Map/Map.js":8,"../Tools/Events.js":11}],7:[function(require,module,exports){
+},{"../Constants.js":2,"../Entities/IA.js":4,"../Entities/Player.js":6,"../Map/Map.js":10,"../Tools/Events.js":13}],9:[function(require,module,exports){
 var COLORS = {
 	NEUTRAL: '#ababab',
 
@@ -463,24 +475,42 @@ class Box {
 
 	incrementLevel (team) {
 		// Cannot increment level of a blocked box
-		if (this.blocked) return
+		if (this.blocked) return 0
 
+		let points = 0
 		// If team is different, change to new team
-		if (this.team !== team) this.changeTeam(team)
+		if (this.team !== team) {
+			if (this.team !== 0) points += this.level * 10
+			else points += 5 // Neutral box
+			this.changeTeam(team)
+		}
 		else {
 			this.level += 1
-			if (this.level === 4) this.blocked = true
+			points += this.level * 5
+			if (this.level === 4) {
+				this.blocked = true
+				points += 10
+			}
 		}
+		return points
 	}
 
 	blockBox (team) {
 		// Cannot change a blocked box
-		if (this.blocked) return false
+		if (this.blocked) return 0
+
+		let points = 0
+		if (this.team !== 0 && this.team !== team) {
+			points += this.level * 10
+		}
 
 		this.team = team
 		this.level = 4
 		this.blocked = true
-		return true
+
+		points += 60 //1*5 + 2*5 + 3*5 + 4*5 + 10
+
+		return points
 	}
 
 	changeTeam (team) {
@@ -521,7 +551,7 @@ class Box {
 }
 
 module.exports = Box
-},{}],8:[function(require,module,exports){
+},{}],10:[function(require,module,exports){
 const Box = require('./Box.js')
 
 var map_vars = {
@@ -590,8 +620,9 @@ class Map {
 	}
 
 	paintArea (x, y, team) {
-		let visited = this.getBlankMap()
+		let points = 0
 
+		let visited = this.getBlankMap()
 		let queue = []
 		queue.push({x:x, y:y})
 
@@ -600,7 +631,7 @@ class Map {
 			let x = elem.x
 			let y = elem.y
 			visited[x][y] = 1
-			this.matrix[x][y].blockBox(team)
+			points += this.matrix[x][y].blockBox(team)
 
 			for (let i = -1; i <= 1; ++i) {
 				for (let j = -1; j <= 1; ++j) {
@@ -619,14 +650,18 @@ class Map {
 				}
 			}
 		}
+
+		return points
 	}
 
 	searchClosedPolygon (data) {
+		let points = 0
+
 		let x = data.x
 		let y = data.y
 		let team = data.team
 
-		if (!this.matrix[x][y].blocked) return
+		if (!this.matrix[x][y].blocked) return 0
 
 		// Start bfs in each non-blocked direction
 		for (let i = -1; i <= 1; ++i) {
@@ -636,16 +671,11 @@ class Map {
 				let ny = y+j
 
 				if (this.isOutOfBounds(nx, ny) || this.matrix[nx][ny].isBlockedBy(team)) continue
-				if (!this.findWall(nx, ny, team)) this.paintArea(nx, ny, team)
+				if (!this.findWall(nx, ny, team)) points += this.paintArea(nx, ny, team)
 			}
 		}
-	}
 
-	update () {
-		var self = this
-		return function (data) {
-			self.searchClosedPolygon(data)
-		}
+		return points
 	}
 
 	draw () {
@@ -661,13 +691,13 @@ class Map {
 	}
 
 	playerMovedTo (x, y, team) {
-		this.matrix[x][y].incrementLevel(team)
-		return 0
+		let points = this.matrix[x][y].incrementLevel(team)
+		return points // Verbose but clear
 	}
 }
 
 module.exports = Map
-},{"./Box.js":7}],9:[function(require,module,exports){
+},{"./Box.js":9}],11:[function(require,module,exports){
 const BUTTON_STATE = {
 	STATIC: 1,
 	HOVER: 2,
@@ -749,7 +779,7 @@ class Button {
 }
 
 module.exports = Button
-},{}],10:[function(require,module,exports){
+},{}],12:[function(require,module,exports){
 const Button = require('./Button.js')
 const {STATE} = require('../Constants.js')
 
@@ -796,7 +826,7 @@ class Menu {
 }
 
 module.exports = Menu
-},{"../Constants.js":2,"./Button.js":9}],11:[function(require,module,exports){
+},{"../Constants.js":2,"./Button.js":11}],13:[function(require,module,exports){
 class Events {
 	
 	constructor () {
@@ -839,7 +869,7 @@ class Events {
 }
 
 module.exports = Events
-},{}],12:[function(require,module,exports){
+},{}],14:[function(require,module,exports){
 class FPS {
 
 	constructor () {
@@ -873,7 +903,7 @@ class FPS {
 }
 
 module.exports = FPS
-},{}],13:[function(require,module,exports){
+},{}],15:[function(require,module,exports){
 class Keyboard {
 
 	constructor () {
@@ -899,7 +929,7 @@ class Keyboard {
 }
 
 module.exports = Keyboard
-},{}],14:[function(require,module,exports){
+},{}],16:[function(require,module,exports){
 class Mouse {
 
 	constructor (canvas) {
@@ -947,7 +977,7 @@ class Mouse {
 }
 
 module.exports = Mouse
-},{}],15:[function(require,module,exports){
+},{}],17:[function(require,module,exports){
 const Client = require('./Client/Client.js')
 const SinglePlayer = require('./Game/SinglePlayer.js')
 const MultiPlayer = require('./Game/MultiPlayer.js')
@@ -1038,4 +1068,4 @@ window.onload = function () {
 	init()
 	setInterval(loop, timestep)
 }
-},{"./Client/Client.js":1,"./Constants.js":2,"./Game/MultiPlayer.js":5,"./Game/SinglePlayer.js":6,"./Menu/Menu.js":10,"./Tools/FPS.js":12,"./Tools/Keyboard.js":13,"./Tools/Mouse.js":14}]},{},[15]);
+},{"./Client/Client.js":1,"./Constants.js":2,"./Game/MultiPlayer.js":7,"./Game/SinglePlayer.js":8,"./Menu/Menu.js":12,"./Tools/FPS.js":14,"./Tools/Keyboard.js":15,"./Tools/Mouse.js":16}]},{},[17]);
