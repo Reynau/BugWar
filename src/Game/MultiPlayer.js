@@ -1,15 +1,15 @@
-const GameMap = require('./Map/Map.js')
-const Events = require('./Tools/Events.js')
-const Player = require('./Entities/Player.js')
-const IA = require('./Entities/IA.js')
-const {STATE} = require('./Constants.js')
+const GameMap = require('../Map/Map.js')
+const Events = require('../Tools/Events.js')
+const Player = require('../Entities/Player.js')
+const IA = require('../Entities/IA.js')
+const {STATE} = require('../Constants.js')
 
 var game_vars = {
 	map_width: 10,
 	map_height: 10,
 }
 
-class Game {
+class MultiPlayer {
 
 	constructor () {
 		let mx = game_vars.map_width
@@ -25,7 +25,7 @@ class Game {
 		this.hud = undefined;
 
 		this.players = {
-			1: [new Player(1, 0, 0, mx, my, 1)],
+			1: [/*new Player(1, 0, 0, mx, my, 1)*/],
 			2: [/*new IA(2, 0, my-1, mx, my, 2)*/],
 			3: [/*new IA(3, mx-1, 0, mx, my, 3)*/],
 			4: [/*new IA(4, mx-1, my-1, mx, my, 4)*/],
@@ -56,14 +56,7 @@ class Game {
 		}
 	}
 
-	clearCanvas () {
-		ctx.beginPath()
-		ctx.fillStyle = "white"
-		ctx.fillRect(0, 0, canv.width, canv.height)
-		ctx.closePath()
-	}
-
-	update (keyboard) {
+	update (mouse, keyboard) {
 		this.updatePlayers(keyboard);
 		// update players
 		// update items
@@ -74,7 +67,6 @@ class Game {
 	}
 
 	draw () {
-		this.clearCanvas()
 		this.map.draw();
 		this.drawPlayers();
 		// draw items
@@ -83,4 +75,4 @@ class Game {
 	}
 }
 
-module.exports = Game
+module.exports = MultiPlayer

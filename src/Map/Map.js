@@ -137,7 +137,8 @@ class Map {
 	}
 
 	playerMovedTo (x, y, team) {
-		this.matrix[x][y].incrementLevel(team);
+		this.matrix[x][y].incrementLevel(team)
+		return 0
 	}
 }
 

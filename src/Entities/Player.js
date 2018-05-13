@@ -22,6 +22,7 @@ class Player {
 
 	generateUpdateEvent () {
 		return {
+			id: this.id,
 			x: this.x,
 			y: this.y,
 			ox: this.ox,
@@ -34,6 +35,10 @@ class Player {
 	}
 
 	playerGetUpdate (data) {
+		if (data.id !== this.id) {
+			console.log("Player id and data id is not the same!")
+			return
+		}
 		this.x = data.x
 		this.y = data.y
 		this.ox = data.ox
@@ -54,6 +59,10 @@ class Player {
 			})
 		}
 		return collide
+	}
+
+	incrementPoints (points) {
+		this.points += points
 	}
 
 	move (dx, dy, players, events) {
