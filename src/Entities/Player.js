@@ -8,19 +8,24 @@ class Player extends MovingEntity {
 		this.points = 0
 	}
 
-	move (dx, dy, players, events) {
-		this.x += dx
-		this.y += dy
+	move (players, events) {
+		this.x += this.vx
+		this.y += this.vy
 
 		if (this.x < 0 || this.y < 0 || this.x >= this.mx || this.y >= this.my) {
 			this.x = this.ox
 			this.y = this.oy
+			this.vx = 0
+			this.vy = 0
 		}
 		else if (this.collideWithPlayer(players)) {
 			this.x = this.ox
 			this.y = this.oy
+			this.vx = 0
+			this.vy = 0
 		}
-		else events.publish("player_update", this.generateUpdateEvent())
+		
+		if (this.x !== this.ox || this.y !== this.oy) events.publish("player_update", this.generateUpdateEvent())
 	}
 
 	update (players, keyboard, events) {
@@ -34,10 +39,14 @@ class Player extends MovingEntity {
 		this.oy = this.y
 
 		// Update player position if necessary
-		if (keyboard.isDown(keyboard.UP)) this.move(0, -this.vy, players, events)
-		else if (keyboard.isDown(keyboard.LEFT)) this.move(-this.vx, 0, players, events)
-		else if (keyboard.isDown(keyboard.DOWN)) this.move(0, this.vy, players, events)
-		else if (keyboard.isDown(keyboard.RIGHT)) this.move(this.vx, 0, players, events)
+		switch (keyboard.lastKeyPressed()) {
+			case keyboard.UP: this.vx = 0; this.vy = -1; break
+			case keyboard.LEFT: this.vx = -1; this.vy = 0; break
+			case keyboard.DOWN: this.vx = 0; this.vy = 1; break
+			case keyboard.RIGHT: this.vx = 1; this.vy = 0; break
+		}
+
+		this.move(players, events)
 	}
 
 	draw () {

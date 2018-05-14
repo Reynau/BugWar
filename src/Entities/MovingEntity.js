@@ -11,8 +11,8 @@ class MovingEntity extends Entity {
 		this.ox = x
 		this.oy = y
 		// X and Y speed
-		this.vx = 1
-		this.vy = 1
+		this.vx = 0
+		this.vy = 0
 
 		this.last_update_timestamp = 0
 	}

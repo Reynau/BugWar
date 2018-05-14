@@ -11,10 +11,10 @@ class IA extends MovingEntity {
 	moveAutonomously (players, events) {
 		let dir = this.random_round(1,4)
 		switch(dir) {
-			case 1: this.x += this.vx; break
-			case 2: this.x -= this.vx; break
-			case 3: this.y += this.vy; break
-			case 4: this.y -= this.vy; break
+			case 1: this.x += 1; break
+			case 2: this.x -= 1; break
+			case 3: this.y += 1; break
+			case 4: this.y -= 1; break
 		}
 
 		if (this.x < 0 || this.y < 0 || this.x >= this.mx || this.y >= this.my) {
@@ -25,7 +25,8 @@ class IA extends MovingEntity {
 			this.x = this.ox
 			this.y = this.oy
 		}
-		else events.publish("player_update", this.generateUpdateEvent())
+		
+		if (this.x !== this.ox || this.y !== this.oy) events.publish("player_update", this.generateUpdateEvent())
 	}
 
 	update (players, keyboard, events) {

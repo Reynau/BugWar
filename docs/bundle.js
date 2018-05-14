@@ -49,10 +49,10 @@ class IA extends MovingEntity {
 	moveAutonomously (players, events) {
 		let dir = this.random_round(1,4)
 		switch(dir) {
-			case 1: this.x += this.vx; break
-			case 2: this.x -= this.vx; break
-			case 3: this.y += this.vy; break
-			case 4: this.y -= this.vy; break
+			case 1: this.x += 1; break
+			case 2: this.x -= 1; break
+			case 3: this.y += 1; break
+			case 4: this.y -= 1; break
 		}
 
 		if (this.x < 0 || this.y < 0 || this.x >= this.mx || this.y >= this.my) {
@@ -63,7 +63,8 @@ class IA extends MovingEntity {
 			this.x = this.ox
 			this.y = this.oy
 		}
-		else events.publish("player_update", this.generateUpdateEvent())
+		
+		if (this.x !== this.ox || this.y !== this.oy) events.publish("player_update", this.generateUpdateEvent())
 	}
 
 	update (players, keyboard, events) {
@@ -104,8 +105,8 @@ class MovingEntity extends Entity {
 		this.ox = x
 		this.oy = y
 		// X and Y speed
-		this.vx = 1
-		this.vy = 1
+		this.vx = 0
+		this.vy = 0
 
 		this.last_update_timestamp = 0
 	}
@@ -182,19 +183,24 @@ class Player extends MovingEntity {
 		this.points = 0
 	}
 
-	move (dx, dy, players, events) {
-		this.x += dx
-		this.y += dy
+	move (players, events) {
+		this.x += this.vx
+		this.y += this.vy
 
 		if (this.x < 0 || this.y < 0 || this.x >= this.mx || this.y >= this.my) {
 			this.x = this.ox
 			this.y = this.oy
+			this.vx = 0
+			this.vy = 0
 		}
 		else if (this.collideWithPlayer(players)) {
 			this.x = this.ox
 			this.y = this.oy
+			this.vx = 0
+			this.vy = 0
 		}
-		else events.publish("player_update", this.generateUpdateEvent())
+		
+		if (this.x !== this.ox || this.y !== this.oy) events.publish("player_update", this.generateUpdateEvent())
 	}
 
 	update (players, keyboard, events) {
@@ -208,10 +214,14 @@ class Player extends MovingEntity {
 		this.oy = this.y
 
 		// Update player position if necessary
-		if (keyboard.isDown(keyboard.UP)) this.move(0, -this.vy, players, events)
-		else if (keyboard.isDown(keyboard.LEFT)) this.move(-this.vx, 0, players, events)
-		else if (keyboard.isDown(keyboard.DOWN)) this.move(0, this.vy, players, events)
-		else if (keyboard.isDown(keyboard.RIGHT)) this.move(this.vx, 0, players, events)
+		switch (keyboard.lastKeyPressed()) {
+			case keyboard.UP: this.vx = 0; this.vy = -1; break
+			case keyboard.LEFT: this.vx = -1; this.vy = 0; break
+			case keyboard.DOWN: this.vx = 0; this.vy = 1; break
+			case keyboard.RIGHT: this.vx = 1; this.vy = 0; break
+		}
+
+		this.move(players, events)
 	}
 
 	draw () {
@@ -909,6 +919,8 @@ class Keyboard {
 	constructor () {
 		this._pressed = {}
 
+		this.lastKey = null
+
 		this.LEFT = 65
 		this.UP = 87
 		this.RIGHT = 68
@@ -919,8 +931,13 @@ class Keyboard {
 		return this._pressed[keyCode]
 	}
 
+	lastKeyPressed () {
+		return this.lastKey
+	}
+
 	onKeydown (event) {
 		this._pressed[event.keyCode] = true
+		this.lastKey = event.keyCode
 	}
 
 	onKeyup (event) {
