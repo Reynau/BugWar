@@ -5,8 +5,8 @@ const IA = require('../Entities/IA.js')
 const {STATE} = require('../Constants.js')
 
 var game_vars = {
-	map_width: 10,
-	map_height: 10,
+	map_width: 50,
+	map_height: 50,
 }
 
 class SinglePlayer {
@@ -26,9 +26,9 @@ class SinglePlayer {
 
 		this.players = {
 			1: [new Player(1, 0, 0, mx, my, 1)],
-			2: [new IA(2, 0, my-1, mx, my, 2)],
-			3: [new IA(3, mx-1, 0, mx, my, 3)],
-			4: [new IA(4, mx-1, my-1, mx, my, 4)],
+			2: [new IA(2, 0, my-1, mx, my, 2), new IA(2, 0, my-5, mx, my, 2)],
+			3: [new IA(3, mx-1, 0, mx, my, 3), new IA(3, mx-5, 0, mx, my, 3)],
+			4: [new IA(4, mx-1, my-1, mx, my, 4), new IA(4, mx-5, my-1, mx, my, 4)],
 		}
 	}
 

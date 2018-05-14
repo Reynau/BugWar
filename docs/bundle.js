@@ -314,8 +314,8 @@ const IA = require('../Entities/IA.js')
 const {STATE} = require('../Constants.js')
 
 var game_vars = {
-	map_width: 10,
-	map_height: 10,
+	map_width: 50,
+	map_height: 50,
 }
 
 class SinglePlayer {
@@ -335,9 +335,9 @@ class SinglePlayer {
 
 		this.players = {
 			1: [new Player(1, 0, 0, mx, my, 1)],
-			2: [new IA(2, 0, my-1, mx, my, 2)],
-			3: [new IA(3, mx-1, 0, mx, my, 3)],
-			4: [new IA(4, mx-1, my-1, mx, my, 4)],
+			2: [new IA(2, 0, my-1, mx, my, 2), new IA(2, 0, my-5, mx, my, 2)],
+			3: [new IA(3, mx-1, 0, mx, my, 3), new IA(3, mx-5, 0, mx, my, 3)],
+			4: [new IA(4, mx-1, my-1, mx, my, 4), new IA(4, mx-5, my-1, mx, my, 4)],
 		}
 	}
 
@@ -593,11 +593,11 @@ class Map {
 	findWall (x, y, team) {
 		let visited = this.getBlankMap()
 
-		let queue = []
-		queue.push({x:x, y:y})
+		let stack = []
+		stack.push({x:x, y:y})
 
-		while (queue.length > 0) {
-			let elem = queue.shift()
+		while (stack.length > 0) {
+			let elem = stack.pop()
 			let x = elem.x
 			let y = elem.y
 			visited[x][y] = 1
@@ -612,7 +612,7 @@ class Map {
 					if (this.isOutOfBounds(nx, ny)) return true
 					if (this.matrix[nx][ny].isBlockedBy(team) || visited[nx][ny]) continue
 
-					queue.push({x:nx, y:ny})
+					stack.push({x:nx, y:ny})
 				}
 			}
 		}
@@ -654,12 +654,12 @@ class Map {
 		return points
 	}
 
-	searchClosedPolygon (data) {
+	searchClosedPolygon (playerData) {
 		let points = 0
 
-		let x = data.x
-		let y = data.y
-		let team = data.team
+		let x = playerData.x
+		let y = playerData.y
+		let team = playerData.team
 
 		if (!this.matrix[x][y].blocked) return 0
 

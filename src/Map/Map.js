@@ -39,11 +39,11 @@ class Map {
 	findWall (x, y, team) {
 		let visited = this.getBlankMap()
 
-		let queue = []
-		queue.push({x:x, y:y})
+		let stack = []
+		stack.push({x:x, y:y})
 
-		while (queue.length > 0) {
-			let elem = queue.shift()
+		while (stack.length > 0) {
+			let elem = stack.pop()
 			let x = elem.x
 			let y = elem.y
 			visited[x][y] = 1
@@ -58,7 +58,7 @@ class Map {
 					if (this.isOutOfBounds(nx, ny)) return true
 					if (this.matrix[nx][ny].isBlockedBy(team) || visited[nx][ny]) continue
 
-					queue.push({x:nx, y:ny})
+					stack.push({x:nx, y:ny})
 				}
 			}
 		}
@@ -100,12 +100,12 @@ class Map {
 		return points
 	}
 
-	searchClosedPolygon (data) {
+	searchClosedPolygon (playerData) {
 		let points = 0
 
-		let x = data.x
-		let y = data.y
-		let team = data.team
+		let x = playerData.x
+		let y = playerData.y
+		let team = playerData.team
 
 		if (!this.matrix[x][y].blocked) return 0
 
