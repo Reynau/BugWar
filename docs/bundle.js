@@ -30,6 +30,11 @@ class Client {
 		this.socket.on('room_joined', joinedCallback)
 		this.socket.on('room_unavailable', notAvailableCallback)
 	}
+
+	onPlayerData (callback) {
+		this.socket.emit('player_data')
+		this.socket.on('player_data', callback)
+	}
 }
 
 module.exports = Client
@@ -371,7 +376,7 @@ var game_vars = {
 
 class MultiPlayerGame extends BasicGame {
 
-	constructor () {
+	constructor (client) {
 		super()
 
 		let mx = game_vars.map_width
@@ -385,16 +390,41 @@ class MultiPlayerGame extends BasicGame {
 
 		this.items = undefined
 
-		this.client = new Client()
-
-		this.players = {
-			1: [new Player(1, 0, 0, mx, my, 1)],
-			2: [new IA(2, 0, my-1, mx, my, 2), new IA(2, 0, my-5, mx, my, 2)],
-			3: [new IA(3, mx-1, 0, mx, my, 3), new IA(3, mx-5, 0, mx, my, 3)],
-			4: [new IA(4, mx-1, my-1, mx, my, 4), new IA(4, mx-5, my-1, mx, my, 4)],
-		}
+		this.client = client
+		this.client.onPlayerData(this.updatePlayerData())
 
 		this.hud = new HUD(this.players)
+	}
+
+	updatePlayerData () {
+		let mx = game_vars.map_width
+		let my = game_vars.map_height
+		let self = this
+
+		return function (data) {
+			console.log("Player data received.")
+			self.players = {
+				1: [],
+				2: [],
+				3: [],
+				4: [],
+			}
+			console.log(data)
+
+			for (let team in data) {
+				for (let id in data[team]) {
+					let playerData = data[team][id]
+					let player = undefined
+					if (id === self.client.socket.id) {
+						player = new Player(id, playerData.x, playerData.y, mx, my, team)
+					}
+					else {
+						player = new IA(id, playerData.x, playerData.y, mx, my, team)
+					}
+					self.players[team].push(player)
+				}
+			}
+		}
 	}
 }
 
@@ -544,7 +574,8 @@ class Box {
 
 	draw (x, y, w, h) {
 		var color;
-		switch(this.team) {
+		let team = parseInt(this.team)
+		switch(team) {
 			case 0: color = COLORS.NEUTRAL; break
 			case 1: color = COLORS.RED[this.level]; break
 			case 2: color = COLORS.BLUE[this.level]; break

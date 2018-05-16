@@ -29,6 +29,11 @@ class Client {
 		this.socket.on('room_joined', joinedCallback)
 		this.socket.on('room_unavailable', notAvailableCallback)
 	}
+
+	onPlayerData (callback) {
+		this.socket.emit('player_data')
+		this.socket.on('player_data', callback)
+	}
 }
 
 module.exports = Client

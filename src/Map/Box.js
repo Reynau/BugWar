@@ -100,7 +100,8 @@ class Box {
 
 	draw (x, y, w, h) {
 		var color;
-		switch(this.team) {
+		let team = parseInt(this.team)
+		switch(team) {
 			case 0: color = COLORS.NEUTRAL; break
 			case 1: color = COLORS.RED[this.level]; break
 			case 2: color = COLORS.BLUE[this.level]; break

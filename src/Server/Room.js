@@ -26,14 +26,19 @@ class Room {
 	playerJoin (playerSocket) {
 		let team = this.searchTeamSlot()
 		if (team) {
+			playerSocket = this.assignRandomPosition(playerSocket)
 			this.players[team][playerSocket.id] = playerSocket
 			this.players[team].nPlayers += 1
 			this.nPlayers += 1
+
 			playerSocket.emit("room_joined", {
 				room: this.id,
 				team: team,
 			})
 			console.log("Player joined room " + this.id + " at team " + team + " successfully.")
+
+			// When new player is ready, update all the players with the new player
+			playerSocket.on('player_data', this.onPlayerData())
 		}
 		else console.log("Cannot find any available team")
 	}
@@ -44,10 +49,60 @@ class Room {
 				this.players[team][socketId] = null
 				--this.players[team].nPlayers
 				--this.nPlayers
+				this.sendPlayerData()
 				console.log("Player leaved room " + this.id)
 				return
 			}
 		}
+	}
+
+	onPlayerData () {
+		let self = this
+		return function () {
+			let data = self.generatePlayerData()
+			for (let team in self.players) {
+				for (let socketId in self.players[team]) {
+					if (socketId === "nPlayers") continue
+					if (self.players[team][socketId]) {
+						self.players[team][socketId].emit('player_data', data)
+					}
+				}
+			}
+		}
+	}
+
+	sendPlayerData () {
+		let data = this.generatePlayerData()
+		for (let team in this.players) {
+			for (let socketId in this.players[team]) {
+				if (socketId === "nPlayers") continue
+				if (this.players[team][socketId]) {
+					this.players[team][socketId].emit('player_data', data)
+				}
+			}
+		}
+	}
+
+	generatePlayerData () {
+		let data = {
+			1: { },
+			2: { },
+			3: { },
+			4: { },
+		}
+		for (let team in this.players) {
+			for (let socketId in this.players[team]) {
+				if (socketId === "nPlayers") continue
+				if (this.players[team][socketId]) {
+					let player = this.players[team][socketId]
+					data[team][socketId] = {
+						x: player.x,
+						y: player.y,
+					}
+				}
+			}
+		}
+		return data
 	}
 
 	searchTeamSlot () {
@@ -62,6 +117,20 @@ class Room {
 		}
 
 		return minTeam
+	}
+
+	assignRandomPosition (player) {
+		let x = this.random_round(0,50)
+		let y = this.random_round(0,50)
+
+		player.x = x
+		player.y = y
+
+		return player
+	}
+
+	random_round (min, max) {
+	  	return Math.floor(Math.random() * (max - min + 1)) + min;
 	}
 }
 
