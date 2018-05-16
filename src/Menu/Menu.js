@@ -3,8 +3,7 @@ const {STATE} = require('../Constants.js')
 
 class Menu {
 
-	constructor (mouse) {
-		this.mouse = mouse
+	constructor () {
 		this.buttons = [
 			new Button(
 				15, 
@@ -20,7 +19,22 @@ class Menu {
 				function () {
 					return STATE.SINGLEPLAYER_GAME
 				}
-			)
+			),
+			new Button(
+				15, 
+				80, 
+				200, 50, 
+				"MultiPlayer", 
+				{
+					background: "#9bc1ff",
+					hoverBackground: "#a8fff4",
+					borderColor: "black",
+					textColor: "black",
+				},
+				function () {
+					return STATE.ROOM_SELECTOR
+				}
+			),
 		]
 	}
 

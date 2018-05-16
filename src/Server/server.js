@@ -4,7 +4,11 @@ const io = require('socket.io')()
 class Server {
 
 	constructor () {
-		this.rooms = {'1': new Room('1','name',4,2,'pswd')}
+		this.rooms = {
+			'1': new Room('1','name',4,2,'pswd'),
+			'2': new Room('2','name',4,2,'pswd'),
+			'3': new Room('3','name',4,2,'pswd'),
+		}
 		this.players = {}
 
 		io.on('connection', this.onPlayerConnect())
@@ -18,9 +22,23 @@ class Server {
 			console.log("Socked with id " + socket.id + " has connected")
 			self.players[socket.id] = socket
 
+			socket.on('list_rooms', self.listRooms(socket))
 			socket.on('join_room', self.playerJoinRoom(socket))
 			socket.on('leave_room', self.playerLeaveRoom(socket))
 			socket.on('disconnect', self.onPlayerDisconnect(socket))
+		}
+	}
+
+	listRooms (socket) {
+		let self = this
+		return function () {
+			console.log("Generating list of rooms...")
+			let rooms = []
+			for (let room in self.rooms) {
+				rooms.push(room)
+			}
+			console.log("Emiting list: ", rooms)
+			socket.emit('list_rooms', rooms)
 		}
 	}
 

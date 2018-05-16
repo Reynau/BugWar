@@ -2,6 +2,7 @@ const Client = require('./Client/Client.js')
 const SinglePlayerGame = require('./Game/SinglePlayerGame.js')
 const MultiPlayerGame = require('./Game/MultiPlayerGame.js')
 const Menu = require('./Menu/Menu.js')
+const RoomSelector = require('./Menu/RoomSelector.js')
 const Keyboard = require('./Tools/Keyboard.js')
 const Mouse = require('./Tools/Mouse.js')
 const FPS = require('./Tools/FPS.js')
@@ -23,7 +24,8 @@ var renderInQueue = false;
 
 function init () {
 	fps = new FPS()
-	menu = new Menu(mouse)
+	client = new Client()
+	menu = new Menu()
 	scene = menu
 }
 
@@ -44,8 +46,9 @@ function update () {
 	var changeState = scene.update(mouse, keyboard);
 	switch (changeState) {
 		case STATE.MENU: scene = menu; break
-		case STATE.SINGLEPLAYER_GAME: scene = new MultiPlayerGame(); break
-		//case STATE.MULTIPLAYER_GAME: scene = new MultiPlayerGame(serverConnectionData); break
+		case STATE.ROOM_SELECTOR: scene = new RoomSelector(client); break
+		case STATE.SINGLEPLAYER_GAME: scene = new SinglePlayerGame(); break
+		case STATE.MULTIPLAYER_GAME: scene = new MultiPlayerGame(client); break
 	}
 
 	mouse.clean()

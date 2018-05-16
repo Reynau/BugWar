@@ -38,9 +38,9 @@ class Mouse {
 	}
 
 	clean () {
-		/*this.clicked = false
+		this.clicked = false
 		this.cx = null
-		this.cy = null*/
+		this.cy = null
 	}
 }
 

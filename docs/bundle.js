@@ -1,17 +1,34 @@
 (function(){function r(e,n,t){function o(i,f){if(!n[i]){if(!e[i]){var c="function"==typeof require&&require;if(!f&&c)return c(i,!0);if(u)return u(i,!0);var a=new Error("Cannot find module '"+i+"'");throw a.code="MODULE_NOT_FOUND",a}var p=n[i]={exports:{}};e[i][0].call(p.exports,function(r){var n=e[i][1][r];return o(n||r)},p,p.exports,r,e,n,t)}return n[i].exports}for(var u="function"==typeof require&&require,i=0;i<t.length;i++)o(t[i]);return o}return r})()({1:[function(require,module,exports){
 class Client {
 
-	constructor (playerMoveCallback) {
-		var self = this
+	constructor () { 
+		this.socket = null
+	}
 
-		this.socket = io.connect('http://localhost');
+	connect () {
+		this.socket = io.connect('http://localhost')
 
-		this.socket.emit('join_room', '1')
+		//this.joinRoom('1')
 		
 		this.socket.on('room_joined', function (data) {
 			console.log("Room " + data.room + " joined successfully at team " + data.team)
 			//this.socket.emit('leave_room')
 		});
+	}
+
+	disconnect () {
+		this.socket.disconnect()
+	}
+
+	getListOfRooms (callback) {
+		this.socket.emit('list_rooms')
+		this.socket.on('list_rooms', callback)
+	}
+
+	joinRoom (roomId, joinedCallback, notAvailableCallback) {
+		this.socket.emit('join_room', roomId)
+		this.socket.on('room_joined', joinedCallback)
+		this.socket.on('room_unavailable', notAvailableCallback)
 	}
 }
 
@@ -20,8 +37,9 @@ module.exports = Client
 module.exports = {
 	STATE: {
 		MENU: 1,
-		SINGLEPLAYER_GAME: 2,
-		MULTIPLAYER_GAME: 3,
+		ROOM_SELECTOR: 2,
+		SINGLEPLAYER_GAME: 3,
+		MULTIPLAYER_GAME: 4,
 	},
 }
 },{}],3:[function(require,module,exports){
@@ -302,7 +320,7 @@ class BasicGame {
 }
 
 module.exports = BasicGame
-},{"../Constants.js":2,"../Entities/IA.js":4,"../Entities/Player.js":6,"../Map/Map.js":12,"../Tools/Events.js":15,"./HUD.js":8}],8:[function(require,module,exports){
+},{"../Constants.js":2,"../Entities/IA.js":4,"../Entities/Player.js":6,"../Map/Map.js":12,"../Tools/Events.js":16,"./HUD.js":8}],8:[function(require,module,exports){
 class HUD {
 
 	constructor (players) {
@@ -381,7 +399,7 @@ class MultiPlayerGame extends BasicGame {
 }
 
 module.exports = MultiPlayerGame
-},{"../Client/Client.js":1,"../Constants.js":2,"../Entities/IA.js":4,"../Entities/Player.js":6,"../Map/Map.js":12,"../Tools/Events.js":15,"./BasicGame.js":7,"./HUD.js":8}],10:[function(require,module,exports){
+},{"../Client/Client.js":1,"../Constants.js":2,"../Entities/IA.js":4,"../Entities/Player.js":6,"../Map/Map.js":12,"../Tools/Events.js":16,"./BasicGame.js":7,"./HUD.js":8}],10:[function(require,module,exports){
 const HUD = require('./HUD.js')
 const BasicGame = require('./BasicGame.js')
 const GameMap = require('../Map/Map.js')
@@ -423,7 +441,7 @@ class SinglePlayerGame extends BasicGame {
 }
 
 module.exports = SinglePlayerGame
-},{"../Constants.js":2,"../Entities/IA.js":4,"../Entities/Player.js":6,"../Map/Map.js":12,"../Tools/Events.js":15,"./BasicGame.js":7,"./HUD.js":8}],11:[function(require,module,exports){
+},{"../Constants.js":2,"../Entities/IA.js":4,"../Entities/Player.js":6,"../Map/Map.js":12,"../Tools/Events.js":16,"./BasicGame.js":7,"./HUD.js":8}],11:[function(require,module,exports){
 var COLORS = {
 	NEUTRAL: '#ababab',
 
@@ -781,8 +799,7 @@ const {STATE} = require('../Constants.js')
 
 class Menu {
 
-	constructor (mouse) {
-		this.mouse = mouse
+	constructor () {
 		this.buttons = [
 			new Button(
 				15, 
@@ -798,7 +815,22 @@ class Menu {
 				function () {
 					return STATE.SINGLEPLAYER_GAME
 				}
-			)
+			),
+			new Button(
+				15, 
+				80, 
+				200, 50, 
+				"MultiPlayer", 
+				{
+					background: "#9bc1ff",
+					hoverBackground: "#a8fff4",
+					borderColor: "black",
+					textColor: "black",
+				},
+				function () {
+					return STATE.ROOM_SELECTOR
+				}
+			),
 		]
 	}
 
@@ -823,6 +855,98 @@ class Menu {
 
 module.exports = Menu
 },{"../Constants.js":2,"./Button.js":13}],15:[function(require,module,exports){
+const Button = require('./Button.js')
+const {STATE} = require('../Constants.js')
+
+class RoomSelector {
+
+	constructor (client) {
+		let self = this
+
+		this.client = client
+		this.changeState = null
+
+		this.buttons = [
+			new Button(
+				15, 
+				15, 
+				200, 50, 
+				"Back to menu", 
+				{
+					background: "#9bc1ff",
+					hoverBackground: "#a8fff4",
+					borderColor: "black",
+					textColor: "black",
+				},
+				function () {
+					self.client.disconnect()
+					self.changeState = STATE.MENU
+				}
+			),
+		]
+
+		this.client.connect()
+		this.client.getListOfRooms(this.onListOfRooms())
+	}
+
+	createRoomButton (x, y, roomId) {
+		let self = this
+		return new Button(
+			x, 
+			y, 
+			200, 50, 
+			"Room " + roomId, 
+			{
+				background: "#ffbc9b",
+				hoverBackground: "#ffe5b2",
+				borderColor: "black",
+				textColor: "black",
+			},
+			function () {
+				self.client.joinRoom(
+					roomId, 
+					() => self.changeState = STATE.MULTIPLAYER_GAME,
+					() => console.log("Room unavailable")
+				)
+			}
+		)
+	}
+
+	onListOfRooms () {
+		let self = this
+		return function (data) {
+			console.log("List of rooms received: ", data)
+			let i = 0
+			for (let room in data) {
+				let btn = self.createRoomButton(15, 100 + i*(50+15), data[room])
+				self.buttons.push(btn)
+				++i
+			}
+		}
+	}
+
+	update (mouse, keyboard) {
+		let click = (mouse.clicked) ? mouse.getClickPosition() : false
+		let mousePos = mouse.getPosition()
+
+		this.buttons.forEach((btn) => {
+			if (btn.isInside(mousePos)) btn.hover()
+			else btn.normal()
+
+			if (click && btn.isInside(click)) {
+				btn.click()
+			}
+		})
+		return this.changeState
+	}
+
+	draw () {
+		this.buttons.forEach((btn) => btn.draw())
+	}
+}
+
+module.exports = RoomSelector
+},{"../Constants.js":2,"./Button.js":13}],16:[function(require,module,exports){
 class Events {
 	
 	constructor () {
@@ -865,7 +989,7 @@ class Events {
 }
 
 module.exports = Events
-},{}],16:[function(require,module,exports){
+},{}],17:[function(require,module,exports){
 class FPS {
 
 	constructor () {
@@ -899,7 +1023,7 @@ class FPS {
 }
 
 module.exports = FPS
-},{}],17:[function(require,module,exports){
+},{}],18:[function(require,module,exports){
 class Keyboard {
 
 	constructor () {
@@ -932,7 +1056,7 @@ class Keyboard {
 }
 
 module.exports = Keyboard
-},{}],18:[function(require,module,exports){
+},{}],19:[function(require,module,exports){
 class Mouse {
 
 	constructor (canvas) {
@@ -973,18 +1097,19 @@ class Mouse {
 	}
 
 	clean () {
-		/*this.clicked = false
+		this.clicked = false
 		this.cx = null
-		this.cy = null*/
+		this.cy = null
 	}
 }
 
 module.exports = Mouse
-},{}],19:[function(require,module,exports){
+},{}],20:[function(require,module,exports){
 const Client = require('./Client/Client.js')
 const SinglePlayerGame = require('./Game/SinglePlayerGame.js')
 const MultiPlayerGame = require('./Game/MultiPlayerGame.js')
 const Menu = require('./Menu/Menu.js')
+const RoomSelector = require('./Menu/RoomSelector.js')
 const Keyboard = require('./Tools/Keyboard.js')
 const Mouse = require('./Tools/Mouse.js')
 const FPS = require('./Tools/FPS.js')
@@ -1006,7 +1131,8 @@ var renderInQueue = false;
 
 function init () {
 	fps = new FPS()
-	menu = new Menu(mouse)
+	client = new Client()
+	menu = new Menu()
 	scene = menu
 }
 
@@ -1027,8 +1153,9 @@ function update () {
 	var changeState = scene.update(mouse, keyboard);
 	switch (changeState) {
 		case STATE.MENU: scene = menu; break
-		case STATE.SINGLEPLAYER_GAME: scene = new MultiPlayerGame(); break
-		//case STATE.MULTIPLAYER_GAME: scene = new MultiPlayerGame(serverConnectionData); break
+		case STATE.ROOM_SELECTOR: scene = new RoomSelector(client); break
+		case STATE.SINGLEPLAYER_GAME: scene = new SinglePlayerGame(); break
+		case STATE.MULTIPLAYER_GAME: scene = new MultiPlayerGame(client); break
 	}
 
 	mouse.clean()
@@ -1071,4 +1198,4 @@ window.onload = function () {
 	init()
 	setInterval(loop, timestep)
 }
-},{"./Client/Client.js":1,"./Constants.js":2,"./Game/MultiPlayerGame.js":9,"./Game/SinglePlayerGame.js":10,"./Menu/Menu.js":14,"./Tools/FPS.js":16,"./Tools/Keyboard.js":17,"./Tools/Mouse.js":18}]},{},[19]);
+},{"./Client/Client.js":1,"./Constants.js":2,"./Game/MultiPlayerGame.js":9,"./Game/SinglePlayerGame.js":10,"./Menu/Menu.js":14,"./Menu/RoomSelector.js":15,"./Tools/FPS.js":17,"./Tools/Keyboard.js":18,"./Tools/Mouse.js":19}]},{},[20]);
