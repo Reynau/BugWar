@@ -81,6 +81,7 @@ class MultiPlayerGame extends BasicGame {
 					self.players[team].push(player)
 				}
 			}
+			self.hud.setPlayers(self.players)
 		}
 	}
 }

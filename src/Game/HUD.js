@@ -4,6 +4,10 @@ class HUD {
 		this.players = players
 	}
 
+	setPlayers (players) {
+		this.players = players
+	}
+
 	drawText (text, x, y) {
 		ctx.beginPath()
 		ctx.font = "20px Arial"
