@@ -1,11 +1,12 @@
 const MovingEntity = require('./MovingEntity.js')
 
 class Player extends MovingEntity {
-	constructor (id, x, y, xLimit, yLimit, team) {
+	constructor (id, x, y, xLimit, yLimit, team, client) {
 		super(id, x, y, xLimit, yLimit)
 
 		this.team = team
 		this.points = 0
+		this.client = client
 	}
 
 	move (players, events) {
@@ -25,7 +26,16 @@ class Player extends MovingEntity {
 			this.vy = 0
 		}
 		
-		if (this.x !== this.ox || this.y !== this.oy) events.publish("player_update", this.generateUpdateEvent())
+		if (this.x !== this.ox || this.y !== this.oy) {
+			events.publish("player_update", this.generateUpdateEvent())
+			let data = {
+				id: this.id,
+				vx: this.vx,
+				vy: this.vy,
+			}
+			console.log("Sending player_move data: ", data)
+			this.client.sendPlayerMove(data)
+		}
 	}
 
 	update (players, keyboard, events) {

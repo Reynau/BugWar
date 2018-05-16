@@ -39,6 +39,7 @@ class Room {
 
 			// When new player is ready, update all the players with the new player
 			playerSocket.on('player_data', this.onPlayerData())
+			playerSocket.on('player_move', this.onPlayerMove())
 		}
 		else console.log("Cannot find any available team")
 	}
@@ -52,6 +53,21 @@ class Room {
 				this.sendPlayerData()
 				console.log("Player leaved room " + this.id)
 				return
+			}
+		}
+	}
+
+	onPlayerMove () {
+		let self = this
+		return function (data) {
+			console.log("Received player_move data: ", data)
+			for (let team in self.players) {
+				for (let socketId in self.players[team]) {
+					if (socketId === "nPlayers") continue
+					if (self.players[team][socketId]) {
+						self.players[team][socketId].emit('player_move', data)
+					}
+				}
 			}
 		}
 	}
@@ -120,8 +136,8 @@ class Room {
 	}
 
 	assignRandomPosition (player) {
-		let x = this.random_round(0,50)
-		let y = this.random_round(0,50)
+		let x = this.random_round(0,49)
+		let y = this.random_round(0,49)
 
 		player.x = x
 		player.y = y

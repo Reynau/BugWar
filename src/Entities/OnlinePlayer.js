@@ -8,6 +8,11 @@ class OnlinePlayer extends MovingEntity {
 		this.points = 0
 	}
 
+	onMovePlayerData (data) {
+		this.vx = data.vx
+		this.vy = data.vy
+	}
+
 	move (players, events) {
 		this.x += this.vx
 		this.y += this.vy
@@ -37,14 +42,6 @@ class OnlinePlayer extends MovingEntity {
 		// Save old position
 		this.ox = this.x
 		this.oy = this.y
-
-		// Update player position if necessary
-		switch (keyboard.lastKeyPressed()) {
-			case keyboard.UP: this.vx = 0; this.vy = -1; break
-			case keyboard.LEFT: this.vx = -1; this.vy = 0; break
-			case keyboard.DOWN: this.vx = 0; this.vy = 1; break
-			case keyboard.RIGHT: this.vx = 1; this.vy = 0; break
-		}
 
 		this.move(players, events)
 	}

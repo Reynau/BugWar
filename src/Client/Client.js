@@ -7,11 +7,8 @@ class Client {
 	connect () {
 		this.socket = io.connect('http://localhost')
 
-		//this.joinRoom('1')
-		
 		this.socket.on('room_joined', function (data) {
 			console.log("Room " + data.room + " joined successfully at team " + data.team)
-			//this.socket.emit('leave_room')
 		});
 	}
 
@@ -33,6 +30,14 @@ class Client {
 	onPlayerData (callback) {
 		this.socket.emit('player_data')
 		this.socket.on('player_data', callback)
+	}
+
+	onPlayerMove (callback) {
+		this.socket.on('player_move', callback)
+	}
+
+	sendPlayerMove (data) {
+		this.socket.emit('player_move', data)
 	}
 }
 

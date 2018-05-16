@@ -8,11 +8,8 @@ class Client {
 	connect () {
 		this.socket = io.connect('http://localhost')
 
-		//this.joinRoom('1')
-		
 		this.socket.on('room_joined', function (data) {
 			console.log("Room " + data.room + " joined successfully at team " + data.team)
-			//this.socket.emit('leave_room')
 		});
 	}
 
@@ -34,6 +31,14 @@ class Client {
 	onPlayerData (callback) {
 		this.socket.emit('player_data')
 		this.socket.on('player_data', callback)
+	}
+
+	onPlayerMove (callback) {
+		this.socket.on('player_move', callback)
+	}
+
+	sendPlayerMove (data) {
+		this.socket.emit('player_move', data)
 	}
 }
 
@@ -198,12 +203,17 @@ module.exports = MovingEntity
 },{"./Entity.js":3}],6:[function(require,module,exports){
 const MovingEntity = require('./MovingEntity.js')
 
-class Player extends MovingEntity {
+class OnlinePlayer extends MovingEntity {
 	constructor (id, x, y, xLimit, yLimit, team) {
 		super(id, x, y, xLimit, yLimit)
 
 		this.team = team
 		this.points = 0
+	}
+
+	onMovePlayerData (data) {
+		this.vx = data.vx
+		this.vy = data.vy
 	}
 
 	move (players, events) {
@@ -224,6 +234,73 @@ class Player extends MovingEntity {
 		}
 		
 		if (this.x !== this.ox || this.y !== this.oy) events.publish("player_update", this.generateUpdateEvent())
+	}
+
+	update (players, keyboard, events) {
+		// Update last timestamp
+		var timestamp = Date.now();
+		if (timestamp - this.last_update_timestamp < 500) return;
+		this.last_update_timestamp = timestamp;
+
+		// Save old position
+		this.ox = this.x
+		this.oy = this.y
+
+		this.move(players, events)
+	}
+
+	draw () {
+		ctx.beginPath()
+		ctx.rect(this.x * 15, this.y * 15, 10, 10)
+		ctx.fillStyle = "magenta"
+		ctx.fill()
+		ctx.lineWidth = 1
+		ctx.strokeStyle = "green"
+		ctx.stroke()
+		ctx.closePath()
+	}
+}
+
+module.exports = OnlinePlayer
+},{"./MovingEntity.js":5}],7:[function(require,module,exports){
+const MovingEntity = require('./MovingEntity.js')
+
+class Player extends MovingEntity {
+	constructor (id, x, y, xLimit, yLimit, team, client) {
+		super(id, x, y, xLimit, yLimit)
+
+		this.team = team
+		this.points = 0
+		this.client = client
+	}
+
+	move (players, events) {
+		this.x += this.vx
+		this.y += this.vy
+
+		if (this.x < 0 || this.y < 0 || this.x >= this.mx || this.y >= this.my) {
+			this.x = this.ox
+			this.y = this.oy
+			this.vx = 0
+			this.vy = 0
+		}
+		else if (this.collideWithPlayer(players)) {
+			this.x = this.ox
+			this.y = this.oy
+			this.vx = 0
+			this.vy = 0
+		}
+		
+		if (this.x !== this.ox || this.y !== this.oy) {
+			events.publish("player_update", this.generateUpdateEvent())
+			let data = {
+				id: this.id,
+				vx: this.vx,
+				vy: this.vy,
+			}
+			console.log("Sending player_move data: ", data)
+			this.client.sendPlayerMove(data)
+		}
 	}
 
 	update (players, keyboard, events) {
@@ -260,7 +337,7 @@ class Player extends MovingEntity {
 }
 
 module.exports = Player
-},{"./MovingEntity.js":5}],7:[function(require,module,exports){
+},{"./MovingEntity.js":5}],8:[function(require,module,exports){
 const HUD = require('./HUD.js')
 const GameMap = require('../Map/Map.js')
 const Events = require('../Tools/Events.js')
@@ -325,7 +402,7 @@ class BasicGame {
 }
 
 module.exports = BasicGame
-},{"../Constants.js":2,"../Entities/IA.js":4,"../Entities/Player.js":6,"../Map/Map.js":12,"../Tools/Events.js":16,"./HUD.js":8}],8:[function(require,module,exports){
+},{"../Constants.js":2,"../Entities/IA.js":4,"../Entities/Player.js":7,"../Map/Map.js":13,"../Tools/Events.js":17,"./HUD.js":9}],9:[function(require,module,exports){
 class HUD {
 
 	constructor (players) {
@@ -359,13 +436,13 @@ class HUD {
 }
 
 module.exports = HUD
-},{}],9:[function(require,module,exports){
+},{}],10:[function(require,module,exports){
 const HUD = require('./HUD.js')
 const BasicGame = require('./BasicGame.js')
 const GameMap = require('../Map/Map.js')
 const Events = require('../Tools/Events.js')
 const Player = require('../Entities/Player.js')
-const IA = require('../Entities/IA.js')
+const OnlinePlayer = require('../Entities/OnlinePlayer.js')
 const {STATE} = require('../Constants.js')
 const Client = require('../Client/Client.js')
 
@@ -392,8 +469,27 @@ class MultiPlayerGame extends BasicGame {
 
 		this.client = client
 		this.client.onPlayerData(this.updatePlayerData())
+		this.client.onPlayerMove(this.updatePlayerMove())
 
 		this.hud = new HUD(this.players)
+	}
+
+	updatePlayerMove () {
+		let self = this
+
+		return function (data) {
+			console.log("Received player_move data: ", data)
+			for (let team in self.players) {
+				for (let id in self.players[team]) {
+					if (self.players[team][id].id === self.client.socket.id) continue
+
+					if (self.players[team][id].id === data.id) {
+						self.players[team][id].onMovePlayerData(data)
+						return
+					}
+				}
+			}
+		}
 	}
 
 	updatePlayerData () {
@@ -416,10 +512,10 @@ class MultiPlayerGame extends BasicGame {
 					let playerData = data[team][id]
 					let player = undefined
 					if (id === self.client.socket.id) {
-						player = new Player(id, playerData.x, playerData.y, mx, my, team)
+						player = new Player(id, playerData.x, playerData.y, mx, my, team, self.client)
 					}
 					else {
-						player = new IA(id, playerData.x, playerData.y, mx, my, team)
+						player = new OnlinePlayer(id, playerData.x, playerData.y, mx, my, team)
 					}
 					self.players[team].push(player)
 				}
@@ -429,7 +525,7 @@ class MultiPlayerGame extends BasicGame {
 }
 
 module.exports = MultiPlayerGame
-},{"../Client/Client.js":1,"../Constants.js":2,"../Entities/IA.js":4,"../Entities/Player.js":6,"../Map/Map.js":12,"../Tools/Events.js":16,"./BasicGame.js":7,"./HUD.js":8}],10:[function(require,module,exports){
+},{"../Client/Client.js":1,"../Constants.js":2,"../Entities/OnlinePlayer.js":6,"../Entities/Player.js":7,"../Map/Map.js":13,"../Tools/Events.js":17,"./BasicGame.js":8,"./HUD.js":9}],11:[function(require,module,exports){
 const HUD = require('./HUD.js')
 const BasicGame = require('./BasicGame.js')
 const GameMap = require('../Map/Map.js')
@@ -471,7 +567,7 @@ class SinglePlayerGame extends BasicGame {
 }
 
 module.exports = SinglePlayerGame
-},{"../Constants.js":2,"../Entities/IA.js":4,"../Entities/Player.js":6,"../Map/Map.js":12,"../Tools/Events.js":16,"./BasicGame.js":7,"./HUD.js":8}],11:[function(require,module,exports){
+},{"../Constants.js":2,"../Entities/IA.js":4,"../Entities/Player.js":7,"../Map/Map.js":13,"../Tools/Events.js":17,"./BasicGame.js":8,"./HUD.js":9}],12:[function(require,module,exports){
 var COLORS = {
 	NEUTRAL: '#ababab',
 
@@ -596,7 +692,7 @@ class Box {
 }
 
 module.exports = Box
-},{}],12:[function(require,module,exports){
+},{}],13:[function(require,module,exports){
 const Box = require('./Box.js')
 
 var map_vars = {
@@ -742,7 +838,7 @@ class Map {
 }
 
 module.exports = Map
-},{"./Box.js":11}],13:[function(require,module,exports){
+},{"./Box.js":12}],14:[function(require,module,exports){
 const BUTTON_STATE = {
 	STATIC: 1,
 	HOVER: 2,
@@ -824,7 +920,7 @@ class Button {
 }
 
 module.exports = Button
-},{}],14:[function(require,module,exports){
+},{}],15:[function(require,module,exports){
 const Button = require('./Button.js')
 const {STATE} = require('../Constants.js')
 
@@ -885,7 +981,7 @@ class Menu {
 }
 
 module.exports = Menu
-},{"../Constants.js":2,"./Button.js":13}],15:[function(require,module,exports){
+},{"../Constants.js":2,"./Button.js":14}],16:[function(require,module,exports){
 const Button = require('./Button.js')
 const {STATE} = require('../Constants.js')
 
@@ -977,7 +1073,7 @@ class RoomSelector {
 }
 
 module.exports = RoomSelector
-},{"../Constants.js":2,"./Button.js":13}],16:[function(require,module,exports){
+},{"../Constants.js":2,"./Button.js":14}],17:[function(require,module,exports){
 class Events {
 	
 	constructor () {
@@ -1020,7 +1116,7 @@ class Events {
 }
 
 module.exports = Events
-},{}],17:[function(require,module,exports){
+},{}],18:[function(require,module,exports){
 class FPS {
 
 	constructor () {
@@ -1054,7 +1150,7 @@ class FPS {
 }
 
 module.exports = FPS
-},{}],18:[function(require,module,exports){
+},{}],19:[function(require,module,exports){
 class Keyboard {
 
 	constructor () {
@@ -1087,7 +1183,7 @@ class Keyboard {
 }
 
 module.exports = Keyboard
-},{}],19:[function(require,module,exports){
+},{}],20:[function(require,module,exports){
 class Mouse {
 
 	constructor (canvas) {
@@ -1135,7 +1231,7 @@ class Mouse {
 }
 
 module.exports = Mouse
-},{}],20:[function(require,module,exports){
+},{}],21:[function(require,module,exports){
 const Client = require('./Client/Client.js')
 const SinglePlayerGame = require('./Game/SinglePlayerGame.js')
 const MultiPlayerGame = require('./Game/MultiPlayerGame.js')
@@ -1229,4 +1325,4 @@ window.onload = function () {
 	init()
 	setInterval(loop, timestep)
 }
-},{"./Client/Client.js":1,"./Constants.js":2,"./Game/MultiPlayerGame.js":9,"./Game/SinglePlayerGame.js":10,"./Menu/Menu.js":14,"./Menu/RoomSelector.js":15,"./Tools/FPS.js":17,"./Tools/Keyboard.js":18,"./Tools/Mouse.js":19}]},{},[20]);
+},{"./Client/Client.js":1,"./Constants.js":2,"./Game/MultiPlayerGame.js":10,"./Game/SinglePlayerGame.js":11,"./Menu/Menu.js":15,"./Menu/RoomSelector.js":16,"./Tools/FPS.js":18,"./Tools/Keyboard.js":19,"./Tools/Mouse.js":20}]},{},[21]);

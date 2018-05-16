@@ -3,7 +3,7 @@ const BasicGame = require('./BasicGame.js')
 const GameMap = require('../Map/Map.js')
 const Events = require('../Tools/Events.js')
 const Player = require('../Entities/Player.js')
-const IA = require('../Entities/IA.js')
+const OnlinePlayer = require('../Entities/OnlinePlayer.js')
 const {STATE} = require('../Constants.js')
 const Client = require('../Client/Client.js')
 
@@ -30,8 +30,27 @@ class MultiPlayerGame extends BasicGame {
 
 		this.client = client
 		this.client.onPlayerData(this.updatePlayerData())
+		this.client.onPlayerMove(this.updatePlayerMove())
 
 		this.hud = new HUD(this.players)
+	}
+
+	updatePlayerMove () {
+		let self = this
+
+		return function (data) {
+			console.log("Received player_move data: ", data)
+			for (let team in self.players) {
+				for (let id in self.players[team]) {
+					if (self.players[team][id].id === self.client.socket.id) continue
+
+					if (self.players[team][id].id === data.id) {
+						self.players[team][id].onMovePlayerData(data)
+						return
+					}
+				}
+			}
+		}
 	}
 
 	updatePlayerData () {
@@ -54,10 +73,10 @@ class MultiPlayerGame extends BasicGame {
 					let playerData = data[team][id]
 					let player = undefined
 					if (id === self.client.socket.id) {
-						player = new Player(id, playerData.x, playerData.y, mx, my, team)
+						player = new Player(id, playerData.x, playerData.y, mx, my, team, self.client)
 					}
 					else {
-						player = new IA(id, playerData.x, playerData.y, mx, my, team)
+						player = new OnlinePlayer(id, playerData.x, playerData.y, mx, my, team)
 					}
 					self.players[team].push(player)
 				}
