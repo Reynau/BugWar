@@ -6,11 +6,11 @@ class Client {
 
 		this.socket = io.connect('http://localhost');
 
-		this.socket.on('playerMove', playerMoveCallback)
+		this.socket.emit('join_room', '1')
 		
-		this.socket.on('this', function (data) {
-			console.log(data);
-			self.socket.emit('my other event', { my: 'data' });
+		this.socket.on('room_joined', function (data) {
+			console.log("Room " + data.room + " joined successfully at team " + data.team)
+			//this.socket.emit('leave_room')
 		});
 	}
 }
@@ -238,118 +238,16 @@ class Player extends MovingEntity {
 
 module.exports = Player
 },{"./MovingEntity.js":5}],7:[function(require,module,exports){
+const HUD = require('./HUD.js')
 const GameMap = require('../Map/Map.js')
 const Events = require('../Tools/Events.js')
 const Player = require('../Entities/Player.js')
 const IA = require('../Entities/IA.js')
 const {STATE} = require('../Constants.js')
 
-var game_vars = {
-	map_width: 10,
-	map_height: 10,
-}
+class BasicGame {
 
-class MultiPlayer {
-
-	constructor () {
-		let mx = game_vars.map_width
-		let my = game_vars.map_height
-
-		this.map = new GameMap(mx, my);
-
-		this.events = new Events();
-		this.events.subscribe("player_update", this.playerUpdateCallback())
-		this.events.subscribe("player_update", this.map.update())
-
-		this.items = undefined;
-		this.hud = undefined;
-
-		this.players = {
-			1: [/*new Player(1, 0, 0, mx, my, 1)*/],
-			2: [/*new IA(2, 0, my-1, mx, my, 2)*/],
-			3: [/*new IA(3, mx-1, 0, mx, my, 3)*/],
-			4: [/*new IA(4, mx-1, my-1, mx, my, 4)*/],
-		}
-	}
-
-
-	playerUpdateCallback () {
-		var _self = this
-		return function (data) {
-			_self.map.playerMovedTo(data.x, data.y, data.team)
-		}
-	}
-
-	updatePlayers (keyboard) {
-		for (var team in this.players) {
-			for (let p = 0; p < this.players[team].length; ++p) {
-				this.players[team][p].update(this.players, keyboard, this.events)
-			}
-		}
-	}
-
-	drawPlayers () {
-		for (var team in this.players) {
-			for (let p = 0; p < this.players[team].length; ++p) {
-				this.players[team][p].draw()
-			}
-		}
-	}
-
-	update (mouse, keyboard) {
-		this.updatePlayers(keyboard);
-		// update players
-		// update items
-		// update map
-		// update hud
-		this.events.transmit();
-		return STATE.GAME;
-	}
-
-	draw () {
-		this.map.draw();
-		this.drawPlayers();
-		// draw items
-		// draw players
-		// draw hud
-	}
-}
-
-module.exports = MultiPlayer
-},{"../Constants.js":2,"../Entities/IA.js":4,"../Entities/Player.js":6,"../Map/Map.js":10,"../Tools/Events.js":13}],8:[function(require,module,exports){
-const GameMap = require('../Map/Map.js')
-const Events = require('../Tools/Events.js')
-const Player = require('../Entities/Player.js')
-const IA = require('../Entities/IA.js')
-const {STATE} = require('../Constants.js')
-
-var game_vars = {
-	map_width: 50,
-	map_height: 50,
-}
-
-class SinglePlayer {
-
-	constructor () {
-		let mx = game_vars.map_width
-		let my = game_vars.map_height
-
-		this.map = new GameMap(mx, my);
-
-		this.events = new Events();
-		this.events.subscribe("player_update", this.playerUpdateCallback())
-		this.events.subscribe("player_update", this.mapUpdateCallback())
-
-		this.items = undefined;
-		this.hud = undefined;
-
-		this.players = {
-			1: [new Player(1, 0, 0, mx, my, 1)],
-			2: [new IA(2, 0, my-1, mx, my, 2), new IA(2, 0, my-5, mx, my, 2)],
-			3: [new IA(3, mx-1, 0, mx, my, 3), new IA(3, mx-5, 0, mx, my, 3)],
-			4: [new IA(4, mx-1, my-1, mx, my, 4), new IA(4, mx-5, my-1, mx, my, 4)],
-		}
-	}
+	constructor () { }
 
 	updatePlayerPoints (team, id, points) {
 		this.players[team].forEach((player) => {
@@ -381,33 +279,6 @@ class SinglePlayer {
 		}
 	}
 
-	drawText (x, y, text) {
-		ctx.beginPath()
-		ctx.font = "20px Arial"
-		ctx.fillStyle = "black"
-		ctx.fillText(text, x, y)
-		ctx.closePath()
-	}
-
-	drawTeamPoints () {
-		let y = 25
-		let count = 1
-		for (let team in this.players) {
-			let points = 0
-			for (let p = 0; p < this.players[team].length; ++p) {
-				points += this.players[team][p].points
-			}
-			ctx.beginPath()
-			ctx.font = "20px Arial"
-			ctx.fillStyle = "black"
-			ctx.textAlign="start"
-			ctx.fillText("Team " + team + " points: " + points, canv.width - 350, y * team)
-			ctx.closePath()
-			//this.drawText("Team " + team + " points: " + points, canv.width - 250, y * count)
-			++count
-		}
-	}
-
 	drawPlayers () {
 		for (let team in this.players) {
 			for (let p = 0; p < this.players[team].length; ++p) {
@@ -418,10 +289,7 @@ class SinglePlayer {
 
 	update (mouse, keyboard) {
 		this.updatePlayers(keyboard)
-		// update players
-		// update items
-		// update map
-		// update hud
+
 		this.events.transmit()
 		return STATE.GAME
 	}
@@ -429,15 +297,133 @@ class SinglePlayer {
 	draw () {
 		this.map.draw()
 		this.drawPlayers()
-		this.drawTeamPoints()
-		// draw items
-		// draw players
-		// draw hud
+		this.hud.draw()
 	}
 }
 
-module.exports = SinglePlayer
-},{"../Constants.js":2,"../Entities/IA.js":4,"../Entities/Player.js":6,"../Map/Map.js":10,"../Tools/Events.js":13}],9:[function(require,module,exports){
+module.exports = BasicGame
+},{"../Constants.js":2,"../Entities/IA.js":4,"../Entities/Player.js":6,"../Map/Map.js":12,"../Tools/Events.js":15,"./HUD.js":8}],8:[function(require,module,exports){
+class HUD {
+
+	constructor (players) {
+		this.players = players
+	}
+
+	drawText (text, x, y) {
+		ctx.beginPath()
+		ctx.font = "20px Arial"
+		ctx.fillStyle = "black"
+		ctx.textAlign = "start"
+		ctx.fillText(text, x, y)
+		ctx.closePath()
+	}
+
+	drawTeamPoints () {
+		let x = canv.width - 350
+		let y = 25
+		for (let team in this.players) {
+			let points = 0
+			for (let p = 0; p < this.players[team].length; ++p) {
+				points += this.players[team][p].points
+			}
+			this.drawText("Team " + team + " points: " + points, x, y * team)
+		}
+	}
+
+	draw () {
+		this.drawTeamPoints()
+	}
+}
+
+module.exports = HUD
+},{}],9:[function(require,module,exports){
+const HUD = require('./HUD.js')
+const BasicGame = require('./BasicGame.js')
+const GameMap = require('../Map/Map.js')
+const Events = require('../Tools/Events.js')
+const Player = require('../Entities/Player.js')
+const IA = require('../Entities/IA.js')
+const {STATE} = require('../Constants.js')
+const Client = require('../Client/Client.js')
+
+var game_vars = {
+	map_width: 50,
+	map_height: 50,
+}
+
+class MultiPlayerGame extends BasicGame {
+
+	constructor () {
+		super()
+
+		let mx = game_vars.map_width
+		let my = game_vars.map_height
+
+		this.map = new GameMap(mx, my)
+
+		this.events = new Events()
+		this.events.subscribe("player_update", this.playerUpdateCallback())
+		this.events.subscribe("player_update", this.mapUpdateCallback())
+
+		this.items = undefined
+
+		this.client = new Client()
+
+		this.players = {
+			1: [new Player(1, 0, 0, mx, my, 1)],
+			2: [new IA(2, 0, my-1, mx, my, 2), new IA(2, 0, my-5, mx, my, 2)],
+			3: [new IA(3, mx-1, 0, mx, my, 3), new IA(3, mx-5, 0, mx, my, 3)],
+			4: [new IA(4, mx-1, my-1, mx, my, 4), new IA(4, mx-5, my-1, mx, my, 4)],
+		}
+
+		this.hud = new HUD(this.players)
+	}
+}
+
+module.exports = MultiPlayerGame
+},{"../Client/Client.js":1,"../Constants.js":2,"../Entities/IA.js":4,"../Entities/Player.js":6,"../Map/Map.js":12,"../Tools/Events.js":15,"./BasicGame.js":7,"./HUD.js":8}],10:[function(require,module,exports){
+const HUD = require('./HUD.js')
+const BasicGame = require('./BasicGame.js')
+const GameMap = require('../Map/Map.js')
+const Events = require('../Tools/Events.js')
+const Player = require('../Entities/Player.js')
+const IA = require('../Entities/IA.js')
+const {STATE} = require('../Constants.js')
+
+var game_vars = {
+	map_width: 50,
+	map_height: 50,
+}
+
+class SinglePlayerGame extends BasicGame {
+
+	constructor () {
+		super()
+		
+		let mx = game_vars.map_width
+		let my = game_vars.map_height
+
+		this.map = new GameMap(mx, my);
+
+		this.events = new Events();
+		this.events.subscribe("player_update", this.playerUpdateCallback())
+		this.events.subscribe("player_update", this.mapUpdateCallback())
+
+		this.items = undefined
+
+		this.players = {
+			1: [new Player(1, 0, 0, mx, my, 1)],
+			2: [new IA(2, 0, my-1, mx, my, 2), new IA(2, 0, my-5, mx, my, 2)],
+			3: [new IA(3, mx-1, 0, mx, my, 3), new IA(3, mx-5, 0, mx, my, 3)],
+			4: [new IA(4, mx-1, my-1, mx, my, 4), new IA(4, mx-5, my-1, mx, my, 4)],
+		}
+
+		this.hud = new HUD(this.players)
+	}
+}
+
+module.exports = SinglePlayerGame
+},{"../Constants.js":2,"../Entities/IA.js":4,"../Entities/Player.js":6,"../Map/Map.js":12,"../Tools/Events.js":15,"./BasicGame.js":7,"./HUD.js":8}],11:[function(require,module,exports){
 var COLORS = {
 	NEUTRAL: '#ababab',
 
@@ -561,7 +547,7 @@ class Box {
 }
 
 module.exports = Box
-},{}],10:[function(require,module,exports){
+},{}],12:[function(require,module,exports){
 const Box = require('./Box.js')
 
 var map_vars = {
@@ -707,7 +693,7 @@ class Map {
 }
 
 module.exports = Map
-},{"./Box.js":9}],11:[function(require,module,exports){
+},{"./Box.js":11}],13:[function(require,module,exports){
 const BUTTON_STATE = {
 	STATIC: 1,
 	HOVER: 2,
@@ -789,7 +775,7 @@ class Button {
 }
 
 module.exports = Button
-},{}],12:[function(require,module,exports){
+},{}],14:[function(require,module,exports){
 const Button = require('./Button.js')
 const {STATE} = require('../Constants.js')
 
@@ -836,7 +822,7 @@ class Menu {
 }
 
 module.exports = Menu
-},{"../Constants.js":2,"./Button.js":11}],13:[function(require,module,exports){
+},{"../Constants.js":2,"./Button.js":13}],15:[function(require,module,exports){
 class Events {
 	
 	constructor () {
@@ -879,7 +865,7 @@ class Events {
 }
 
 module.exports = Events
-},{}],14:[function(require,module,exports){
+},{}],16:[function(require,module,exports){
 class FPS {
 
 	constructor () {
@@ -913,7 +899,7 @@ class FPS {
 }
 
 module.exports = FPS
-},{}],15:[function(require,module,exports){
+},{}],17:[function(require,module,exports){
 class Keyboard {
 
 	constructor () {
@@ -946,7 +932,7 @@ class Keyboard {
 }
 
 module.exports = Keyboard
-},{}],16:[function(require,module,exports){
+},{}],18:[function(require,module,exports){
 class Mouse {
 
 	constructor (canvas) {
@@ -994,10 +980,10 @@ class Mouse {
 }
 
 module.exports = Mouse
-},{}],17:[function(require,module,exports){
+},{}],19:[function(require,module,exports){
 const Client = require('./Client/Client.js')
-const SinglePlayer = require('./Game/SinglePlayer.js')
-const MultiPlayer = require('./Game/MultiPlayer.js')
+const SinglePlayerGame = require('./Game/SinglePlayerGame.js')
+const MultiPlayerGame = require('./Game/MultiPlayerGame.js')
 const Menu = require('./Menu/Menu.js')
 const Keyboard = require('./Tools/Keyboard.js')
 const Mouse = require('./Tools/Mouse.js')
@@ -1041,8 +1027,8 @@ function update () {
 	var changeState = scene.update(mouse, keyboard);
 	switch (changeState) {
 		case STATE.MENU: scene = menu; break
-		case STATE.SINGLEPLAYER_GAME: scene = new SinglePlayer(); break
-		//case STATE.MULTIPLAYER_GAME: scene = new MultiPlayer(serverConnectionData); break
+		case STATE.SINGLEPLAYER_GAME: scene = new MultiPlayerGame(); break
+		//case STATE.MULTIPLAYER_GAME: scene = new MultiPlayerGame(serverConnectionData); break
 	}
 
 	mouse.clean()
@@ -1085,4 +1071,4 @@ window.onload = function () {
 	init()
 	setInterval(loop, timestep)
 }
-},{"./Client/Client.js":1,"./Constants.js":2,"./Game/MultiPlayer.js":7,"./Game/SinglePlayer.js":8,"./Menu/Menu.js":12,"./Tools/FPS.js":14,"./Tools/Keyboard.js":15,"./Tools/Mouse.js":16}]},{},[17]);
+},{"./Client/Client.js":1,"./Constants.js":2,"./Game/MultiPlayerGame.js":9,"./Game/SinglePlayerGame.js":10,"./Menu/Menu.js":14,"./Tools/FPS.js":16,"./Tools/Keyboard.js":17,"./Tools/Mouse.js":18}]},{},[19]);

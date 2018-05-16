@@ -5,11 +5,11 @@ class Client {
 
 		this.socket = io.connect('http://localhost');
 
-		this.socket.on('playerMove', playerMoveCallback)
+		this.socket.emit('join_room', '1')
 		
-		this.socket.on('this', function (data) {
-			console.log(data);
-			self.socket.emit('my other event', { my: 'data' });
+		this.socket.on('room_joined', function (data) {
+			console.log("Room " + data.room + " joined successfully at team " + data.team)
+			//this.socket.emit('leave_room')
 		});
 	}
 }

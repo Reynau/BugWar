@@ -1,6 +1,6 @@
 const Client = require('./Client/Client.js')
-const SinglePlayer = require('./Game/SinglePlayer.js')
-const MultiPlayer = require('./Game/MultiPlayer.js')
+const SinglePlayerGame = require('./Game/SinglePlayerGame.js')
+const MultiPlayerGame = require('./Game/MultiPlayerGame.js')
 const Menu = require('./Menu/Menu.js')
 const Keyboard = require('./Tools/Keyboard.js')
 const Mouse = require('./Tools/Mouse.js')
@@ -44,8 +44,8 @@ function update () {
 	var changeState = scene.update(mouse, keyboard);
 	switch (changeState) {
 		case STATE.MENU: scene = menu; break
-		case STATE.SINGLEPLAYER_GAME: scene = new SinglePlayer(); break
-		//case STATE.MULTIPLAYER_GAME: scene = new MultiPlayer(serverConnectionData); break
+		case STATE.SINGLEPLAYER_GAME: scene = new MultiPlayerGame(); break
+		//case STATE.MULTIPLAYER_GAME: scene = new MultiPlayerGame(serverConnectionData); break
 	}
 
 	mouse.clean()
