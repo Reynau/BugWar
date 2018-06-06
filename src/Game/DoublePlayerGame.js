@@ -7,8 +7,8 @@ const IA = require('../Entities/IA.js')
 const {STATE} = require('../Constants.js')
 
 var game_vars = {
-	map_width: 50,
-	map_height: 50,
+	map_width: 20,
+	map_height: 20,
 }
 
 class DoublePlayerGame extends BasicGame {

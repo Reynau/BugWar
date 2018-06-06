@@ -301,15 +301,6 @@ class Player extends MovingEntity {
 		
 		if (this.x !== this.ox || this.y !== this.oy) {
 			events.publish("player_update", this.generateUpdateEvent())
-			/*
-			let data = {
-				id: this.id,
-				vx: this.vx,
-				vy: this.vy,
-			}
-			console.log("Sending player_move data: ", data)
-			this.client.sendPlayerMove(data)
-			*/
 		}
 	}
 
@@ -326,7 +317,7 @@ class Player extends MovingEntity {
 		// Update player position if necessary
 		// TODO: Configurable input --> input mapper
 		if (this.playerNum === 1) {
-			switch (keyboard.lastKeyPressed()) {
+			switch (keyboard.lastKeyPressed(this.playerNum)) {
 				case keyboard.W: this.vx = 0; this.vy = -1; break
 				case keyboard.A: this.vx = -1; this.vy = 0; break
 				case keyboard.S: this.vx = 0; this.vy = 1; break
@@ -334,7 +325,7 @@ class Player extends MovingEntity {
 			}
 		}
 		else if (this.playerNum === 2) {
-			switch (keyboard.lastKeyPressed()) {
+			switch (keyboard.lastKeyPressed(this.playerNum)) {
 				case keyboard.UP: this.vx = 0; this.vy = -1; break
 				case keyboard.LEFT: this.vx = -1; this.vy = 0; break
 				case keyboard.DOWN: this.vx = 0; this.vy = 1; break
@@ -434,8 +425,8 @@ const IA = require('../Entities/IA.js')
 const {STATE} = require('../Constants.js')
 
 var game_vars = {
-	map_width: 50,
-	map_height: 50,
+	map_width: 20,
+	map_height: 20,
 }
 
 class DoublePlayerGame extends BasicGame {
@@ -1238,7 +1229,10 @@ class Keyboard {
 	constructor () {
 		this._pressed = {}
 
-		this.lastKey = null
+		this.lastKey = {
+			1: null,
+			2: null
+		}
 
 		this.A = 65
 		this.W = 87
@@ -1255,13 +1249,23 @@ class Keyboard {
 		return this._pressed[keyCode]
 	}
 
-	lastKeyPressed () {
-		return this.lastKey
+	lastKeyPressed (keyboardGroup) {
+		return this.lastKey[keyboardGroup];
 	}
 
 	onKeydown (event) {
 		this._pressed[event.keyCode] = true
-		this.lastKey = event.keyCode
+		switch (event.keyCode) {
+			case this.A:
+			case this.W:
+			case this.D:
+			case this.S: this.lastKey[1] = event.keyCode; break;
+
+			case this.LEFT:
+			case this.UP:
+			case this.RIGHT:
+			case this.DOWN: this.lastKey[2] = event.keyCode; break;
+		}
 	}
 
 	onKeyup (event) {

@@ -44,7 +44,7 @@ class Player extends MovingEntity {
 		// Update player position if necessary
 		// TODO: Configurable input --> input mapper
 		if (this.playerNum === 1) {
-			switch (keyboard.lastKeyPressed()) {
+			switch (keyboard.lastKeyPressed(this.playerNum)) {
 				case keyboard.W: this.vx = 0; this.vy = -1; break
 				case keyboard.A: this.vx = -1; this.vy = 0; break
 				case keyboard.S: this.vx = 0; this.vy = 1; break
@@ -52,7 +52,7 @@ class Player extends MovingEntity {
 			}
 		}
 		else if (this.playerNum === 2) {
-			switch (keyboard.lastKeyPressed()) {
+			switch (keyboard.lastKeyPressed(this.playerNum)) {
 				case keyboard.UP: this.vx = 0; this.vy = -1; break
 				case keyboard.LEFT: this.vx = -1; this.vy = 0; break
 				case keyboard.DOWN: this.vx = 0; this.vy = 1; break

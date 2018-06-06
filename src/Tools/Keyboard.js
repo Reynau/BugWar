@@ -3,7 +3,10 @@ class Keyboard {
 	constructor () {
 		this._pressed = {}
 
-		this.lastKey = null
+		this.lastKey = {
+			1: null,
+			2: null
+		}
 
 		this.A = 65
 		this.W = 87
@@ -20,13 +23,23 @@ class Keyboard {
 		return this._pressed[keyCode]
 	}
 
-	lastKeyPressed () {
-		return this.lastKey
+	lastKeyPressed (keyboardGroup) {
+		return this.lastKey[keyboardGroup];
 	}
 
 	onKeydown (event) {
 		this._pressed[event.keyCode] = true
-		this.lastKey = event.keyCode
+		switch (event.keyCode) {
+			case this.A:
+			case this.W:
+			case this.D:
+			case this.S: this.lastKey[1] = event.keyCode; break;
+
+			case this.LEFT:
+			case this.UP:
+			case this.RIGHT:
+			case this.DOWN: this.lastKey[2] = event.keyCode; break;
+		}
 	}
 
 	onKeyup (event) {
