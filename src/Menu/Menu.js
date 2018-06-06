@@ -24,6 +24,21 @@ class Menu {
 				15, 
 				80, 
 				200, 50, 
+				"Double Player", 
+				{
+					background: "#9bc1ff",
+					hoverBackground: "#a8fff4",
+					borderColor: "black",
+					textColor: "black",
+				},
+				function () {
+					return STATE.DOUBLEPLAYER_GAME
+				}
+			),
+			new Button(
+				15, 
+				145, 
+				200, 50, 
 				"MultiPlayer", 
 				{
 					background: "#9bc1ff",

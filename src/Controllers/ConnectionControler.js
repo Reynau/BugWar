@@ -1,4 +1,4 @@
-class Client {
+class ConnectionController {
 
 	constructor () { 
 		this.socket = null
@@ -36,9 +36,14 @@ class Client {
 		this.socket.on('player_move', callback)
 	}
 
-	sendPlayerMove (data) {
-		this.socket.emit('player_move', data)
+	sendPlayerMove () {
+		let self = this;
+		return function (data) {
+			if (data.id === self.socket.id) {
+				self.socket.emit('player_move', data)
+			}
+		}
 	}
 }
 
-module.exports = Client
+module.exports = ConnectionController

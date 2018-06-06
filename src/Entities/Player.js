@@ -1,12 +1,12 @@
 const MovingEntity = require('./MovingEntity.js')
 
 class Player extends MovingEntity {
-	constructor (id, x, y, xLimit, yLimit, team, client) {
+	constructor (id, x, y, xLimit, yLimit, team, playerNum = 1) {
 		super(id, x, y, xLimit, yLimit)
 
 		this.team = team
 		this.points = 0
-		this.client = client
+		this.playerNum = playerNum
 	}
 
 	move (players, events) {
@@ -28,13 +28,6 @@ class Player extends MovingEntity {
 		
 		if (this.x !== this.ox || this.y !== this.oy) {
 			events.publish("player_update", this.generateUpdateEvent())
-			let data = {
-				id: this.id,
-				vx: this.vx,
-				vy: this.vy,
-			}
-			console.log("Sending player_move data: ", data)
-			this.client.sendPlayerMove(data)
 		}
 	}
 
@@ -49,12 +42,24 @@ class Player extends MovingEntity {
 		this.oy = this.y
 
 		// Update player position if necessary
-		switch (keyboard.lastKeyPressed()) {
-			case keyboard.UP: this.vx = 0; this.vy = -1; break
-			case keyboard.LEFT: this.vx = -1; this.vy = 0; break
-			case keyboard.DOWN: this.vx = 0; this.vy = 1; break
-			case keyboard.RIGHT: this.vx = 1; this.vy = 0; break
+		// TODO: Configurable input --> input mapper
+		if (this.playerNum === 1) {
+			switch (keyboard.lastKeyPressed()) {
+				case keyboard.W: this.vx = 0; this.vy = -1; break
+				case keyboard.A: this.vx = -1; this.vy = 0; break
+				case keyboard.S: this.vx = 0; this.vy = 1; break
+				case keyboard.D: this.vx = 1; this.vy = 0; break
+			}
 		}
+		else if (this.playerNum === 2) {
+			switch (keyboard.lastKeyPressed()) {
+				case keyboard.UP: this.vx = 0; this.vy = -1; break
+				case keyboard.LEFT: this.vx = -1; this.vy = 0; break
+				case keyboard.DOWN: this.vx = 0; this.vy = 1; break
+				case keyboard.RIGHT: this.vx = 1; this.vy = 0; break
+			}
+		}
+		
 
 		this.move(players, events)
 	}

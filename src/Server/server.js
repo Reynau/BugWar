@@ -4,6 +4,8 @@ const io = require('socket.io')()
 class Server {
 
 	constructor () {
+		this.port = 80;
+
 		this.rooms = {
 			'1': new Room('1','name',4,2,'pswd'),
 			'2': new Room('2','name',4,2,'pswd'),
@@ -12,8 +14,8 @@ class Server {
 		this.players = {}
 
 		io.on('connection', this.onPlayerConnect())
-		io.listen(80)
-		console.log("Server listening to port 80")
+		io.listen(this.port)
+		console.log("Server listening to port " + this.port)
 	}
 
 	onPlayerConnect () {

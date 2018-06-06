@@ -1,16 +1,11 @@
 const MovingEntity = require('./MovingEntity.js')
 
-class OnlinePlayer extends MovingEntity {
+class OnlineEnemyPlayer extends MovingEntity {
 	constructor (id, x, y, xLimit, yLimit, team) {
 		super(id, x, y, xLimit, yLimit)
 
 		this.team = team
 		this.points = 0
-	}
-
-	onMovePlayerData (data) {
-		this.vx = data.vx
-		this.vy = data.vy
 	}
 
 	move (players, events) {
@@ -30,7 +25,14 @@ class OnlinePlayer extends MovingEntity {
 			this.vy = 0
 		}
 		
-		if (this.x !== this.ox || this.y !== this.oy) events.publish("player_update", this.generateUpdateEvent())
+		if (this.x !== this.ox || this.y !== this.oy) {
+			events.publish("player_update", this.generateUpdateEvent())
+		}
+	}
+
+	onMovePlayerData (data) {
+		this.vx = data.vx
+		this.vy = data.vy
 	}
 
 	update (players, keyboard, events) {
@@ -58,4 +60,4 @@ class OnlinePlayer extends MovingEntity {
 	}
 }
 
-module.exports = OnlinePlayer
+module.exports = OnlineEnemyPlayer

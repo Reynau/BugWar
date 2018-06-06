@@ -1,5 +1,15 @@
 (function(){function r(e,n,t){function o(i,f){if(!n[i]){if(!e[i]){var c="function"==typeof require&&require;if(!f&&c)return c(i,!0);if(u)return u(i,!0);var a=new Error("Cannot find module '"+i+"'");throw a.code="MODULE_NOT_FOUND",a}var p=n[i]={exports:{}};e[i][0].call(p.exports,function(r){var n=e[i][1][r];return o(n||r)},p,p.exports,r,e,n,t)}return n[i].exports}for(var u="function"==typeof require&&require,i=0;i<t.length;i++)o(t[i]);return o}return r})()({1:[function(require,module,exports){
-class Client {
+module.exports = {
+	STATE: {
+		MENU: 1,
+		ROOM_SELECTOR: 2,
+		SINGLEPLAYER_GAME: 3,
+		DOUBLEPLAYER_GAME: 4,
+		MULTIPLAYER_GAME: 5,
+	},
+}
+},{}],2:[function(require,module,exports){
+class ConnectionController {
 
 	constructor () { 
 		this.socket = null
@@ -37,21 +47,17 @@ class Client {
 		this.socket.on('player_move', callback)
 	}
 
-	sendPlayerMove (data) {
-		this.socket.emit('player_move', data)
+	sendPlayerMove () {
+		let self = this;
+		return function (data) {
+			if (data.id === self.socket.id) {
+				self.socket.emit('player_move', data)
+			}
+		}
 	}
 }
 
-module.exports = Client
-},{}],2:[function(require,module,exports){
-module.exports = {
-	STATE: {
-		MENU: 1,
-		ROOM_SELECTOR: 2,
-		SINGLEPLAYER_GAME: 3,
-		MULTIPLAYER_GAME: 4,
-	},
-}
+module.exports = ConnectionController
 },{}],3:[function(require,module,exports){
 class Entity {
 
@@ -203,17 +209,12 @@ module.exports = MovingEntity
 },{"./Entity.js":3}],6:[function(require,module,exports){
 const MovingEntity = require('./MovingEntity.js')
 
-class OnlinePlayer extends MovingEntity {
+class OnlineEnemyPlayer extends MovingEntity {
 	constructor (id, x, y, xLimit, yLimit, team) {
 		super(id, x, y, xLimit, yLimit)
 
 		this.team = team
 		this.points = 0
-	}
-
-	onMovePlayerData (data) {
-		this.vx = data.vx
-		this.vy = data.vy
 	}
 
 	move (players, events) {
@@ -233,7 +234,14 @@ class OnlinePlayer extends MovingEntity {
 			this.vy = 0
 		}
 		
-		if (this.x !== this.ox || this.y !== this.oy) events.publish("player_update", this.generateUpdateEvent())
+		if (this.x !== this.ox || this.y !== this.oy) {
+			events.publish("player_update", this.generateUpdateEvent())
+		}
+	}
+
+	onMovePlayerData (data) {
+		this.vx = data.vx
+		this.vy = data.vy
 	}
 
 	update (players, keyboard, events) {
@@ -261,17 +269,17 @@ class OnlinePlayer extends MovingEntity {
 	}
 }
 
-module.exports = OnlinePlayer
+module.exports = OnlineEnemyPlayer
 },{"./MovingEntity.js":5}],7:[function(require,module,exports){
 const MovingEntity = require('./MovingEntity.js')
 
 class Player extends MovingEntity {
-	constructor (id, x, y, xLimit, yLimit, team, client) {
+	constructor (id, x, y, xLimit, yLimit, team, playerNum = 1) {
 		super(id, x, y, xLimit, yLimit)
 
 		this.team = team
 		this.points = 0
-		this.client = client
+		this.playerNum = playerNum
 	}
 
 	move (players, events) {
@@ -293,6 +301,7 @@ class Player extends MovingEntity {
 		
 		if (this.x !== this.ox || this.y !== this.oy) {
 			events.publish("player_update", this.generateUpdateEvent())
+			/*
 			let data = {
 				id: this.id,
 				vx: this.vx,
@@ -300,6 +309,7 @@ class Player extends MovingEntity {
 			}
 			console.log("Sending player_move data: ", data)
 			this.client.sendPlayerMove(data)
+			*/
 		}
 	}
 
@@ -314,12 +324,24 @@ class Player extends MovingEntity {
 		this.oy = this.y
 
 		// Update player position if necessary
-		switch (keyboard.lastKeyPressed()) {
-			case keyboard.UP: this.vx = 0; this.vy = -1; break
-			case keyboard.LEFT: this.vx = -1; this.vy = 0; break
-			case keyboard.DOWN: this.vx = 0; this.vy = 1; break
-			case keyboard.RIGHT: this.vx = 1; this.vy = 0; break
+		// TODO: Configurable input --> input mapper
+		if (this.playerNum === 1) {
+			switch (keyboard.lastKeyPressed()) {
+				case keyboard.W: this.vx = 0; this.vy = -1; break
+				case keyboard.A: this.vx = -1; this.vy = 0; break
+				case keyboard.S: this.vx = 0; this.vy = 1; break
+				case keyboard.D: this.vx = 1; this.vy = 0; break
+			}
 		}
+		else if (this.playerNum === 2) {
+			switch (keyboard.lastKeyPressed()) {
+				case keyboard.UP: this.vx = 0; this.vy = -1; break
+				case keyboard.LEFT: this.vx = -1; this.vy = 0; break
+				case keyboard.DOWN: this.vx = 0; this.vy = 1; break
+				case keyboard.RIGHT: this.vx = 1; this.vy = 0; break
+			}
+		}
+		
 
 		this.move(players, events)
 	}
@@ -402,7 +424,83 @@ class BasicGame {
 }
 
 module.exports = BasicGame
-},{"../Constants.js":2,"../Entities/IA.js":4,"../Entities/Player.js":7,"../Map/Map.js":13,"../Tools/Events.js":17,"./HUD.js":9}],9:[function(require,module,exports){
+},{"../Constants.js":1,"../Entities/IA.js":4,"../Entities/Player.js":7,"../Map/Map.js":15,"../Tools/Events.js":19,"./HUD.js":11}],9:[function(require,module,exports){
+const HUD = require('./HUD.js')
+const BasicGame = require('./BasicGame.js')
+const GameMap = require('../Map/Map.js')
+const Events = require('../Tools/Events.js')
+const Player = require('../Entities/Player.js')
+const IA = require('../Entities/IA.js')
+const {STATE} = require('../Constants.js')
+
+var game_vars = {
+	map_width: 50,
+	map_height: 50,
+}
+
+class DoublePlayerGame extends BasicGame {
+
+	constructor () {
+		super()
+		
+		let mx = game_vars.map_width
+		let my = game_vars.map_height
+
+		this.map = new GameMap(mx, my);
+
+		this.events = new Events();
+		this.events.subscribe("player_update", this.playerUpdateCallback())
+		this.events.subscribe("player_update", this.mapUpdateCallback())
+
+		this.items = undefined
+
+		this.players = {
+			1: [new Player(1, 0, 0, mx, my, 1, 1)],
+			2: [new Player(2, mx-1, my-1, mx, my, 2, 2)],
+			3: [],
+			4: [],
+		}
+
+		this.hud = new HUD(this.players)
+	}
+}
+
+module.exports = DoublePlayerGame
+},{"../Constants.js":1,"../Entities/IA.js":4,"../Entities/Player.js":7,"../Map/Map.js":15,"../Tools/Events.js":19,"./BasicGame.js":8,"./HUD.js":11}],10:[function(require,module,exports){
+class FPS {
+
+	constructor () {
+		// FPS vars
+		this.fps = 60
+		this.framesThisSecond = 0
+		this.lastFpsUpdate = 0
+	}
+
+	incrementFramesThisSecond () {
+		this.framesThisSecond += 1
+	}
+
+	update (timestamp) {
+		// Exponential moving average
+		if (timestamp > this.lastFpsUpdate + 1000) { // update every second
+	        this.fps = 0.25 * this.framesThisSecond + (1 - 0.25) * this.fps // compute the new FPS
+	 
+	        this.lastFpsUpdate = timestamp
+	        this.framesThisSecond = 0
+	    }
+	}
+
+	draw () {
+		ctx.beginPath()
+		ctx.font = "20px Arial"
+		ctx.fillStyle = "black"
+		ctx.fillText("FPS: " + Math.round(this.fps), canv.width - 150, 30)
+		ctx.closePath()
+	}
+}
+
+module.exports = FPS
+},{}],11:[function(require,module,exports){
 class HUD {
 
 	constructor (players) {
@@ -440,15 +538,14 @@ class HUD {
 }
 
 module.exports = HUD
-},{}],10:[function(require,module,exports){
+},{}],12:[function(require,module,exports){
 const HUD = require('./HUD.js')
 const BasicGame = require('./BasicGame.js')
 const GameMap = require('../Map/Map.js')
 const Events = require('../Tools/Events.js')
 const Player = require('../Entities/Player.js')
-const OnlinePlayer = require('../Entities/OnlinePlayer.js')
+const OnlineEnemyPlayer = require('../Entities/OnlineEnemyPlayer.js')
 const {STATE} = require('../Constants.js')
-const Client = require('../Client/Client.js')
 
 var game_vars = {
 	map_width: 50,
@@ -457,23 +554,23 @@ var game_vars = {
 
 class MultiPlayerGame extends BasicGame {
 
-	constructor (client) {
+	constructor (connectionController) {
 		super()
 
 		let mx = game_vars.map_width
 		let my = game_vars.map_height
 
 		this.map = new GameMap(mx, my)
-
+		this.connectionController = connectionController
 		this.events = new Events()
-		this.events.subscribe("player_update", this.playerUpdateCallback())
-		this.events.subscribe("player_update", this.mapUpdateCallback())
-
 		this.items = undefined
 
-		this.client = client
-		this.client.onPlayerData(this.updatePlayerData())
-		this.client.onPlayerMove(this.updatePlayerMove())
+		this.events.subscribe("player_update", this.playerUpdateCallback())
+		this.events.subscribe("player_update", this.mapUpdateCallback())
+		this.events.subscribe("player_update", this.connectionController.sendPlayerMove())
+
+		this.connectionController.onPlayerData(this.updatePlayerData())
+		this.connectionController.onPlayerMove(this.updatePlayerMove())
 
 		this.hud = new HUD(this.players)
 	}
@@ -485,7 +582,7 @@ class MultiPlayerGame extends BasicGame {
 			console.log("Received player_move data: ", data)
 			for (let team in self.players) {
 				for (let id in self.players[team]) {
-					if (self.players[team][id].id === self.client.socket.id) continue
+					if (self.players[team][id].id === self.connectionController.socket.id) continue
 
 					if (self.players[team][id].id === data.id) {
 						self.players[team][id].onMovePlayerData(data)
@@ -509,17 +606,16 @@ class MultiPlayerGame extends BasicGame {
 				3: [],
 				4: [],
 			}
-			console.log(data)
 
 			for (let team in data) {
 				for (let id in data[team]) {
 					let playerData = data[team][id]
 					let player = undefined
-					if (id === self.client.socket.id) {
-						player = new Player(id, playerData.x, playerData.y, mx, my, team, self.client)
+					if (id === self.connectionController.socket.id) {
+						player = new Player(id, playerData.x, playerData.y, mx, my, team, 1)
 					}
 					else {
-						player = new OnlinePlayer(id, playerData.x, playerData.y, mx, my, team)
+						player = new OnlineEnemyPlayer(id, playerData.x, playerData.y, mx, my, team)
 					}
 					self.players[team].push(player)
 				}
@@ -530,7 +626,7 @@ class MultiPlayerGame extends BasicGame {
 }
 
 module.exports = MultiPlayerGame
-},{"../Client/Client.js":1,"../Constants.js":2,"../Entities/OnlinePlayer.js":6,"../Entities/Player.js":7,"../Map/Map.js":13,"../Tools/Events.js":17,"./BasicGame.js":8,"./HUD.js":9}],11:[function(require,module,exports){
+},{"../Constants.js":1,"../Entities/OnlineEnemyPlayer.js":6,"../Entities/Player.js":7,"../Map/Map.js":15,"../Tools/Events.js":19,"./BasicGame.js":8,"./HUD.js":11}],13:[function(require,module,exports){
 const HUD = require('./HUD.js')
 const BasicGame = require('./BasicGame.js')
 const GameMap = require('../Map/Map.js')
@@ -572,7 +668,7 @@ class SinglePlayerGame extends BasicGame {
 }
 
 module.exports = SinglePlayerGame
-},{"../Constants.js":2,"../Entities/IA.js":4,"../Entities/Player.js":7,"../Map/Map.js":13,"../Tools/Events.js":17,"./BasicGame.js":8,"./HUD.js":9}],12:[function(require,module,exports){
+},{"../Constants.js":1,"../Entities/IA.js":4,"../Entities/Player.js":7,"../Map/Map.js":15,"../Tools/Events.js":19,"./BasicGame.js":8,"./HUD.js":11}],14:[function(require,module,exports){
 var COLORS = {
 	NEUTRAL: '#ababab',
 
@@ -697,7 +793,7 @@ class Box {
 }
 
 module.exports = Box
-},{}],13:[function(require,module,exports){
+},{}],15:[function(require,module,exports){
 const Box = require('./Box.js')
 
 var map_vars = {
@@ -843,7 +939,7 @@ class Map {
 }
 
 module.exports = Map
-},{"./Box.js":12}],14:[function(require,module,exports){
+},{"./Box.js":14}],16:[function(require,module,exports){
 const BUTTON_STATE = {
 	STATIC: 1,
 	HOVER: 2,
@@ -925,7 +1021,7 @@ class Button {
 }
 
 module.exports = Button
-},{}],15:[function(require,module,exports){
+},{}],17:[function(require,module,exports){
 const Button = require('./Button.js')
 const {STATE} = require('../Constants.js')
 
@@ -951,6 +1047,21 @@ class Menu {
 			new Button(
 				15, 
 				80, 
+				200, 50, 
+				"Double Player", 
+				{
+					background: "#9bc1ff",
+					hoverBackground: "#a8fff4",
+					borderColor: "black",
+					textColor: "black",
+				},
+				function () {
+					return STATE.DOUBLEPLAYER_GAME
+				}
+			),
+			new Button(
+				15, 
+				145, 
 				200, 50, 
 				"MultiPlayer", 
 				{
@@ -986,7 +1097,7 @@ class Menu {
 }
 
 module.exports = Menu
-},{"../Constants.js":2,"./Button.js":14}],16:[function(require,module,exports){
+},{"../Constants.js":1,"./Button.js":16}],18:[function(require,module,exports){
 const Button = require('./Button.js')
 const {STATE} = require('../Constants.js')
 
@@ -1078,7 +1189,7 @@ class RoomSelector {
 }
 
 module.exports = RoomSelector
-},{"../Constants.js":2,"./Button.js":14}],17:[function(require,module,exports){
+},{"../Constants.js":1,"./Button.js":16}],19:[function(require,module,exports){
 class Events {
 	
 	constructor () {
@@ -1121,41 +1232,7 @@ class Events {
 }
 
 module.exports = Events
-},{}],18:[function(require,module,exports){
-class FPS {
-
-	constructor () {
-		// FPS vars
-		this.fps = 60
-		this.framesThisSecond = 0
-		this.lastFpsUpdate = 0
-	}
-
-	incrementFramesThisSecond () {
-		this.framesThisSecond += 1
-	}
-
-	update (timestamp) {
-		// Exponential moving average
-		if (timestamp > this.lastFpsUpdate + 1000) { // update every second
-	        this.fps = 0.25 * this.framesThisSecond + (1 - 0.25) * this.fps // compute the new FPS
-	 
-	        this.lastFpsUpdate = timestamp
-	        this.framesThisSecond = 0
-	    }
-	}
-
-	draw () {
-		ctx.beginPath()
-		ctx.font = "20px Arial"
-		ctx.fillStyle = "black"
-		ctx.fillText("FPS: " + Math.round(this.fps), canv.width - 150, 30)
-		ctx.closePath()
-	}
-}
-
-module.exports = FPS
-},{}],19:[function(require,module,exports){
+},{}],20:[function(require,module,exports){
 class Keyboard {
 
 	constructor () {
@@ -1163,10 +1240,15 @@ class Keyboard {
 
 		this.lastKey = null
 
-		this.LEFT = 65
-		this.UP = 87
-		this.RIGHT = 68
-		this.DOWN = 83
+		this.A = 65
+		this.W = 87
+		this.D = 68
+		this.S = 83
+
+		this.LEFT = 37
+		this.UP = 38
+		this.RIGHT = 39
+		this.DOWN = 40
 	}
 	
 	isDown (keyCode) {
@@ -1188,7 +1270,7 @@ class Keyboard {
 }
 
 module.exports = Keyboard
-},{}],20:[function(require,module,exports){
+},{}],21:[function(require,module,exports){
 class Mouse {
 
 	constructor (canvas) {
@@ -1236,18 +1318,18 @@ class Mouse {
 }
 
 module.exports = Mouse
-},{}],21:[function(require,module,exports){
-const Client = require('./Client/Client.js')
+},{}],22:[function(require,module,exports){
 const SinglePlayerGame = require('./Game/SinglePlayerGame.js')
+const DoublePlayerGame = require('./Game/DoublePlayerGame.js')
 const MultiPlayerGame = require('./Game/MultiPlayerGame.js')
 const Menu = require('./Menu/Menu.js')
 const RoomSelector = require('./Menu/RoomSelector.js')
 const Keyboard = require('./Tools/Keyboard.js')
 const Mouse = require('./Tools/Mouse.js')
-const FPS = require('./Tools/FPS.js')
+const FPS = require('./Game/FPS.js')
 const {STATE} = require('./Constants.js')
 
-var client;
+const ConnectionController = require('./Controllers/ConnectionControler.js')
 
 // Game vars
 var fps, mouse, keyboard
@@ -1263,7 +1345,7 @@ var renderInQueue = false;
 
 function init () {
 	fps = new FPS()
-	client = new Client()
+	connectionController = new ConnectionController()
 	menu = new Menu()
 	scene = menu
 }
@@ -1281,27 +1363,6 @@ function updateDelta () {
 	lastFrame = timestamp
 }
 
-function update () {
-	var changeState = scene.update(mouse, keyboard);
-	switch (changeState) {
-		case STATE.MENU: scene = menu; break
-		case STATE.ROOM_SELECTOR: scene = new RoomSelector(client); break
-		case STATE.SINGLEPLAYER_GAME: scene = new SinglePlayerGame(); break
-		case STATE.MULTIPLAYER_GAME: scene = new MultiPlayerGame(client); break
-	}
-
-	mouse.clean()
-}
-
-function draw (timestamp) {
-	renderInQueue = false
-	clearCanvas()
-	scene.draw()
-	fps.incrementFramesThisSecond()
-	fps.update(timestamp)
-	fps.draw()
-}
-
 function loop () {
 	updateDelta()
 	while (delta >= timestep) {
@@ -1314,6 +1375,28 @@ function loop () {
 		window.requestAnimationFrame(draw)
 		renderInQueue = true
 	}
+}
+
+function update () {
+	var changeState = scene.update(mouse, keyboard);
+	switch (changeState) {
+		case STATE.MENU: scene = menu; break
+		case STATE.ROOM_SELECTOR: scene = new RoomSelector(connectionController); break
+		case STATE.SINGLEPLAYER_GAME: scene = new SinglePlayerGame(); break
+		case STATE.DOUBLEPLAYER_GAME: scene = new DoublePlayerGame(); break
+		case STATE.MULTIPLAYER_GAME: scene = new MultiPlayerGame(connectionController); break
+	}
+
+	mouse.clean()
+}
+
+function draw (timestamp) {
+	renderInQueue = false
+	clearCanvas()
+	scene.draw()
+	fps.incrementFramesThisSecond()
+	fps.update(timestamp)
+	fps.draw()
 }
 
 window.onload = function () {
@@ -1330,4 +1413,4 @@ window.onload = function () {
 	init()
 	setInterval(loop, timestep)
 }
-},{"./Client/Client.js":1,"./Constants.js":2,"./Game/MultiPlayerGame.js":10,"./Game/SinglePlayerGame.js":11,"./Menu/Menu.js":15,"./Menu/RoomSelector.js":16,"./Tools/FPS.js":18,"./Tools/Keyboard.js":19,"./Tools/Mouse.js":20}]},{},[21]);
+},{"./Constants.js":1,"./Controllers/ConnectionControler.js":2,"./Game/DoublePlayerGame.js":9,"./Game/FPS.js":10,"./Game/MultiPlayerGame.js":12,"./Game/SinglePlayerGame.js":13,"./Menu/Menu.js":17,"./Menu/RoomSelector.js":18,"./Tools/Keyboard.js":20,"./Tools/Mouse.js":21}]},{},[22]);

@@ -1,14 +1,14 @@
-const Client = require('./Client/Client.js')
 const SinglePlayerGame = require('./Game/SinglePlayerGame.js')
+const DoublePlayerGame = require('./Game/DoublePlayerGame.js')
 const MultiPlayerGame = require('./Game/MultiPlayerGame.js')
 const Menu = require('./Menu/Menu.js')
 const RoomSelector = require('./Menu/RoomSelector.js')
 const Keyboard = require('./Tools/Keyboard.js')
 const Mouse = require('./Tools/Mouse.js')
-const FPS = require('./Tools/FPS.js')
+const FPS = require('./Game/FPS.js')
 const {STATE} = require('./Constants.js')
 
-var client;
+const ConnectionController = require('./Controllers/ConnectionControler.js')
 
 // Game vars
 var fps, mouse, keyboard
@@ -24,7 +24,7 @@ var renderInQueue = false;
 
 function init () {
 	fps = new FPS()
-	client = new Client()
+	connectionController = new ConnectionController()
 	menu = new Menu()
 	scene = menu
 }
@@ -42,27 +42,6 @@ function updateDelta () {
 	lastFrame = timestamp
 }
 
-function update () {
-	var changeState = scene.update(mouse, keyboard);
-	switch (changeState) {
-		case STATE.MENU: scene = menu; break
-		case STATE.ROOM_SELECTOR: scene = new RoomSelector(client); break
-		case STATE.SINGLEPLAYER_GAME: scene = new SinglePlayerGame(); break
-		case STATE.MULTIPLAYER_GAME: scene = new MultiPlayerGame(client); break
-	}
-
-	mouse.clean()
-}
-
-function draw (timestamp) {
-	renderInQueue = false
-	clearCanvas()
-	scene.draw()
-	fps.incrementFramesThisSecond()
-	fps.update(timestamp)
-	fps.draw()
-}
-
 function loop () {
 	updateDelta()
 	while (delta >= timestep) {
@@ -75,6 +54,28 @@ function loop () {
 		window.requestAnimationFrame(draw)
 		renderInQueue = true
 	}
+}
+
+function update () {
+	var changeState = scene.update(mouse, keyboard);
+	switch (changeState) {
+		case STATE.MENU: scene = menu; break
+		case STATE.ROOM_SELECTOR: scene = new RoomSelector(connectionController); break
+		case STATE.SINGLEPLAYER_GAME: scene = new SinglePlayerGame(); break
+		case STATE.DOUBLEPLAYER_GAME: scene = new DoublePlayerGame(); break
+		case STATE.MULTIPLAYER_GAME: scene = new MultiPlayerGame(connectionController); break
+	}
+
+	mouse.clean()
+}
+
+function draw (timestamp) {
+	renderInQueue = false
+	clearCanvas()
+	scene.draw()
+	fps.incrementFramesThisSecond()
+	fps.update(timestamp)
+	fps.draw()
 }
 
 window.onload = function () {

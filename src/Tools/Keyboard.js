@@ -5,10 +5,15 @@ class Keyboard {
 
 		this.lastKey = null
 
-		this.LEFT = 65
-		this.UP = 87
-		this.RIGHT = 68
-		this.DOWN = 83
+		this.A = 65
+		this.W = 87
+		this.D = 68
+		this.S = 83
+
+		this.LEFT = 37
+		this.UP = 38
+		this.RIGHT = 39
+		this.DOWN = 40
 	}
 	
 	isDown (keyCode) {
