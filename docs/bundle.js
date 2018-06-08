@@ -356,11 +356,34 @@ const GameMap = require('../Map/Map.js')
 const Events = require('../Tools/Events.js')
 const Player = require('../Entities/Player.js')
 const IA = require('../Entities/IA.js')
+const Button = require('../Menu/Button')
 const {STATE} = require('../Constants.js')
 
 class BasicGame {
 
-	constructor () { }
+	constructor (width, height) {
+		let self = this
+
+		this.width = width
+		this.height = height
+		this.changeState = STATE.GAME
+
+		this.backButton = new Button(
+			15, 
+			height * 15 + 25, 
+			200, 50, 
+			"Back to menu", 
+			{
+				background: "#9bc1ff",
+				hoverBackground: "#a8fff4",
+				borderColor: "black",
+				textColor: "black",
+			},
+			function () {
+				self.changeState = STATE.MENU
+			}
+		)
+	}
 
 	updatePlayerPoints (team, id, points) {
 		this.players[team].forEach((player) => {
@@ -400,22 +423,39 @@ class BasicGame {
 		}
 	}
 
+	backButtonClicked (mouse) {
+		let click = (mouse.clicked) ? mouse.getClickPosition() : false
+		let mousePos = mouse.getPosition()
+
+		if (this.backButton.isInside(mousePos)) this.backButton.hover()
+		else this.backButton.normal()
+
+		if (click && this.backButton.isInside(click)) {
+			this.backButton.click()
+		}
+	}
+
 	update (mouse, keyboard) {
+		if (this.backButtonClicked(mouse)) {
+			return this.changeState
+		}
+			
 		this.updatePlayers(keyboard)
 
 		this.events.transmit()
-		return STATE.GAME
+		return this.changeState
 	}
 
 	draw () {
 		this.map.draw()
 		this.drawPlayers()
 		this.hud.draw()
+		this.backButton.draw();
 	}
 }
 
 module.exports = BasicGame
-},{"../Constants.js":1,"../Entities/IA.js":4,"../Entities/Player.js":7,"../Map/Map.js":15,"../Tools/Events.js":19,"./HUD.js":11}],9:[function(require,module,exports){
+},{"../Constants.js":1,"../Entities/IA.js":4,"../Entities/Player.js":7,"../Map/Map.js":15,"../Menu/Button":16,"../Tools/Events.js":19,"./HUD.js":11}],9:[function(require,module,exports){
 const HUD = require('./HUD.js')
 const BasicGame = require('./BasicGame.js')
 const GameMap = require('../Map/Map.js')
@@ -432,10 +472,10 @@ var game_vars = {
 class DoublePlayerGame extends BasicGame {
 
 	constructor () {
-		super()
-		
 		let mx = game_vars.map_width
 		let my = game_vars.map_height
+
+		super(mx, my)
 
 		this.map = new GameMap(mx, my);
 
@@ -452,7 +492,7 @@ class DoublePlayerGame extends BasicGame {
 			4: [],
 		}
 
-		this.hud = new HUD(this.players)
+		this.hud = new HUD(this.players, mx, my)
 	}
 }
 
@@ -485,7 +525,7 @@ class FPS {
 		ctx.beginPath()
 		ctx.font = "20px Arial"
 		ctx.fillStyle = "black"
-		ctx.fillText("FPS: " + Math.round(this.fps), canv.width - 150, 30)
+		ctx.fillText("FPS: " + Math.round(this.fps), canv.width - 100, 25)
 		ctx.closePath()
 	}
 }
@@ -494,8 +534,10 @@ module.exports = FPS
 },{}],11:[function(require,module,exports){
 class HUD {
 
-	constructor (players) {
+	constructor (players, width, height) {
 		this.players = players
+		this.map_width = width
+		this.map_height = height
 	}
 
 	setPlayers (players) {
@@ -512,8 +554,8 @@ class HUD {
 	}
 
 	drawTeamPoints () {
-		let x = canv.width - 350
-		let y = 25
+		let x = this.map_width * 15 + 25
+		let y = 50
 		for (let team in this.players) {
 			let points = 0
 			for (let p = 0; p < this.players[team].length; ++p) {
@@ -539,17 +581,17 @@ const OnlineEnemyPlayer = require('../Entities/OnlineEnemyPlayer.js')
 const {STATE} = require('../Constants.js')
 
 var game_vars = {
-	map_width: 50,
-	map_height: 50,
+	map_width: 35,
+	map_height: 35,
 }
 
 class MultiPlayerGame extends BasicGame {
 
 	constructor (connectionController) {
-		super()
-
 		let mx = game_vars.map_width
 		let my = game_vars.map_height
+
+		super(mx, my)
 
 		this.map = new GameMap(mx, my)
 		this.connectionController = connectionController
@@ -634,10 +676,10 @@ var game_vars = {
 class SinglePlayerGame extends BasicGame {
 
 	constructor () {
-		super()
-		
 		let mx = game_vars.map_width
 		let my = game_vars.map_height
+
+		super(mx, my)
 
 		this.map = new GameMap(mx, my);
 
@@ -654,7 +696,7 @@ class SinglePlayerGame extends BasicGame {
 			4: [new IA(4, mx-1, my-1, mx, my, 4), new IA(4, mx-5, my-1, mx, my, 4)],
 		}
 
-		this.hud = new HUD(this.players)
+		this.hud = new HUD(this.players, mx, my)
 	}
 }
 

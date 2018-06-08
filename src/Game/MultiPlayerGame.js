@@ -7,17 +7,17 @@ const OnlineEnemyPlayer = require('../Entities/OnlineEnemyPlayer.js')
 const {STATE} = require('../Constants.js')
 
 var game_vars = {
-	map_width: 50,
-	map_height: 50,
+	map_width: 35,
+	map_height: 35,
 }
 
 class MultiPlayerGame extends BasicGame {
 
 	constructor (connectionController) {
-		super()
-
 		let mx = game_vars.map_width
 		let my = game_vars.map_height
+
+		super(mx, my)
 
 		this.map = new GameMap(mx, my)
 		this.connectionController = connectionController

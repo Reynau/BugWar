@@ -1,7 +1,9 @@
 class HUD {
 
-	constructor (players) {
+	constructor (players, width, height) {
 		this.players = players
+		this.map_width = width
+		this.map_height = height
 	}
 
 	setPlayers (players) {
@@ -18,8 +20,8 @@ class HUD {
 	}
 
 	drawTeamPoints () {
-		let x = canv.width - 350
-		let y = 25
+		let x = this.map_width * 15 + 25
+		let y = 50
 		for (let team in this.players) {
 			let points = 0
 			for (let p = 0; p < this.players[team].length; ++p) {

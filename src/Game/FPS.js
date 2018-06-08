@@ -25,7 +25,7 @@ class FPS {
 		ctx.beginPath()
 		ctx.font = "20px Arial"
 		ctx.fillStyle = "black"
-		ctx.fillText("FPS: " + Math.round(this.fps), canv.width - 150, 30)
+		ctx.fillText("FPS: " + Math.round(this.fps), canv.width - 100, 25)
 		ctx.closePath()
 	}
 }

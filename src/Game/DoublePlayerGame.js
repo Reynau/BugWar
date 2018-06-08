@@ -14,10 +14,10 @@ var game_vars = {
 class DoublePlayerGame extends BasicGame {
 
 	constructor () {
-		super()
-		
 		let mx = game_vars.map_width
 		let my = game_vars.map_height
+
+		super(mx, my)
 
 		this.map = new GameMap(mx, my);
 
@@ -34,7 +34,7 @@ class DoublePlayerGame extends BasicGame {
 			4: [],
 		}
 
-		this.hud = new HUD(this.players)
+		this.hud = new HUD(this.players, mx, my)
 	}
 }
 
