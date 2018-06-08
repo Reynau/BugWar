@@ -669,8 +669,8 @@ const IA = require('../Entities/IA.js')
 const {STATE} = require('../Constants.js')
 
 var game_vars = {
-	map_width: 50,
-	map_height: 50,
+	map_width: 35,
+	map_height: 35,
 }
 
 class SinglePlayerGame extends BasicGame {
