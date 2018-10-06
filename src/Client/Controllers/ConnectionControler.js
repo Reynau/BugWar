@@ -27,6 +27,11 @@ class ConnectionController {
 		this.socket.on('room_unavailable', notAvailableCallback)
 	}
 
+	onMapData (callback) {
+		this.socket.emit('map_data')
+		this.socket.on('map_data', callback)
+	}
+
 	onPlayerData (callback) {
 		this.socket.emit('player_data')
 		this.socket.on('player_data', callback)

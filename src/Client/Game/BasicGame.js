@@ -8,7 +8,9 @@ const {STATE} = require('../Constants.js')
 
 class BasicGame {
 
-	constructor (width, height) {
+	constructor () {}
+
+	generateGame (width, height) {
 		let self = this
 
 		this.width = width

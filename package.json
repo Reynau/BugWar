@@ -2,9 +2,9 @@
   "name": "bugwar",
   "version": "1.0.0",
   "description": "",
-  "main": "src/index.js",
+  "main": "src/Server/server.js",
   "scripts": {
-    "build": "browserify src/index.js -o docs/bundle.js && echo 'built!'",
+    "build": "browserify src/client/index.js -o docs/bundle.js && echo 'built!'",
     "start_server": "node src/Server/Server.js",
     "start": "npm run build && npm run start_server",
     "test": "echo \"Error: no test specified\" && exit 1"

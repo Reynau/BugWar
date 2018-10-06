@@ -14,14 +14,15 @@ var game_vars = {
 class SinglePlayerGame extends BasicGame {
 
 	constructor () {
+		super()
+
 		let mx = game_vars.map_width
 		let my = game_vars.map_height
 
-		super(mx, my)
+		this.generateGame(mx, my)
+		this.map = new GameMap(mx, my)
 
-		this.map = new GameMap(mx, my);
-
-		this.events = new Events();
+		this.events = new Events()
 		this.events.subscribe("player_update", this.playerUpdateCallback())
 		this.events.subscribe("player_update", this.mapUpdateCallback())
 
