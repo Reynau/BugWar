@@ -27,6 +27,11 @@ class ConnectionController {
 		this.socket.on('room_unavailable', notAvailableCallback)
 	}
 
+	onGameStart (callback) {
+		this.socket.emit('player_ready')
+		this.socket.on('game_start', callback)
+	}
+
 	onMapData (callback) {
 		this.socket.emit('map_data')
 		this.socket.on('map_data', callback)

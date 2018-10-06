@@ -10,7 +10,6 @@ class MultiPlayerGame extends BasicGame {
 
 	constructor (connectionController) {
 		super()
-		this.generateGame(0, 0)
 
 		this.connectionController = connectionController
 		this.connectionController.onMapData(this.generateMap())
@@ -25,6 +24,23 @@ class MultiPlayerGame extends BasicGame {
 		this.items = undefined
 
 		this.hud = new HUD(this.players)
+	}
+
+	startGame () {
+		let self = this
+
+		return function () {
+			self.connectionController.onGameStart(self.initGame())
+		}
+	}
+
+	initGame () {
+		let self = this
+
+		return function () {
+			console.log("Init game received!")
+			self.state = self.GAME_STATE.RUNNING
+		}
 	}
 
 	generateMap () {

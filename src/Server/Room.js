@@ -28,6 +28,7 @@ class Room {
 		let team = this.searchTeamSlot()
 		if (team) {
 			playerSocket.on('map_data', this.onMapData(playerSocket))
+			playerSocket.on('player_ready', this.onPlayerReady(playerSocket))
 
 			playerSocket = this.assignRandomPosition(playerSocket)
 			this.players[team][playerSocket.id] = playerSocket
@@ -56,6 +57,39 @@ class Room {
 				this.sendPlayerData()
 				console.log("Player leaved room " + this.id)
 				return
+			}
+		}
+	}
+
+	onPlayerReady (playerSocket) {
+		let self = this
+
+		return function () {
+			console.log("Player " + playerSocket.id + " is ready to start!")
+			let count = 1
+			for (let team in self.players) {
+				for (let socketId in self.players[team]) {
+					if (socketId === "nPlayers") continue
+
+					if (socketId === playerSocket.id) {
+						self.players[team][socketId].ready = true
+					}
+					else {
+						if (self.players[team][socketId].ready) ++count;
+					}
+				}
+			}
+			console.log("There are " + count + " of " + self.nPlayers + " players ready!")
+			if (count === self.nPlayers) {
+				console.log("Initializing game...")
+				// If we reach this line, all players are ready
+				for (let team in self.players) {
+					for (let socketId in self.players[team]) {
+						if (socketId === "nPlayers") continue
+						self.players[team][socketId].emit('game_start')
+					}
+				}
+				console.log("Players have been initialized!")
 			}
 		}
 	}

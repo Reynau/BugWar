@@ -38,6 +38,11 @@ class ConnectionController {
 		this.socket.on('room_unavailable', notAvailableCallback)
 	}
 
+	onGameStart (callback) {
+		this.socket.emit('player_ready')
+		this.socket.on('game_start', callback)
+	}
+
 	onMapData (callback) {
 		this.socket.emit('map_data')
 		this.socket.on('map_data', callback)
@@ -366,13 +371,20 @@ const {STATE} = require('../Constants.js')
 
 class BasicGame {
 
-	constructor () {}
+	constructor () {
+		this.GAME_STATE = {
+			STOPPED: 1,
+			RUNNING: 2
+		}
+		this.generateGame(0, 0)
+	}
 
 	generateGame (width, height) {
 		let self = this
 
 		this.width = width
 		this.height = height
+		this.state = this.GAME_STATE.STOPPED
 		this.changeState = STATE.GAME
 
 		this.backButton = new Button(
@@ -387,9 +399,32 @@ class BasicGame {
 				textColor: "black",
 			},
 			function () {
+				self.state = self.GAME_STATE.STOPPED
 				self.changeState = STATE.MENU
 			}
 		)
+
+		this.startButton = new Button(
+			250, 
+			height * 15 + 25, 
+			200, 50, 
+			"Start", 
+			{
+				background: "#9bc1ff",
+				hoverBackground: "#a8fff4",
+				borderColor: "black",
+				textColor: "black",
+			},
+			this.startGame()
+		)
+	}
+
+	startGame () {
+		let self = this
+		
+		return function () {
+			self.state = self.GAME_STATE.RUNNING
+		}
 	}
 
 	updatePlayerPoints (team, id, points) {
@@ -430,26 +465,27 @@ class BasicGame {
 		}
 	}
 
-	backButtonClicked (mouse) {
+	checkButton (mouse, button) {
 		let click = (mouse.clicked) ? mouse.getClickPosition() : false
 		let mousePos = mouse.getPosition()
 
-		if (this.backButton.isInside(mousePos)) this.backButton.hover()
-		else this.backButton.normal()
+		if (button.isInside(mousePos)) button.hover()
+		else button.normal()
 
-		if (click && this.backButton.isInside(click)) {
-			this.backButton.click()
+		if (click && button.isInside(click)) {
+			button.click()
 		}
 	}
 
 	update (mouse, keyboard) {
-		if (this.backButtonClicked(mouse)) {
-			return this.changeState
-		}
-			
-		this.updatePlayers(keyboard)
+		this.checkButton(mouse, this.backButton)
+		this.checkButton(mouse, this.startButton)
 
-		this.events.transmit()
+		if (this.state === this.GAME_STATE.RUNNING) {
+			this.updatePlayers(keyboard)
+			this.events.transmit()
+		}
+
 		return this.changeState
 	}
 
@@ -457,9 +493,10 @@ class BasicGame {
 		this.map.draw()
 		this.drawPlayers()
 		this.hud.draw()
-		this.backButton.draw();
+		this.backButton.draw()
+		this.startButton.draw()
 	}
-}
+}	
 
 module.exports = BasicGame
 },{"../Constants.js":1,"../Entities/IA.js":4,"../Entities/Player.js":7,"../Map/Map.js":15,"../Menu/Button":16,"../Tools/Events.js":19,"./HUD.js":11}],9:[function(require,module,exports){
@@ -592,7 +629,6 @@ class MultiPlayerGame extends BasicGame {
 
 	constructor (connectionController) {
 		super()
-		this.generateGame(0, 0)
 
 		this.connectionController = connectionController
 		this.connectionController.onMapData(this.generateMap())
@@ -607,6 +643,23 @@ class MultiPlayerGame extends BasicGame {
 		this.items = undefined
 
 		this.hud = new HUD(this.players)
+	}
+
+	startGame () {
+		let self = this
+
+		return function () {
+			self.connectionController.onGameStart(self.initGame())
+		}
+	}
+
+	initGame () {
+		let self = this
+
+		return function () {
+			console.log("Init game received!")
+			self.state = self.GAME_STATE.RUNNING
+		}
 	}
 
 	generateMap () {
