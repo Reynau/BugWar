@@ -7,9 +7,9 @@ class Server {
 		this.port = 80;
 
 		this.rooms = {
-			'1': new Room('1','name',4,2,'pswd'),
-			'2': new Room('2','name',4,2,'pswd'),
-			'3': new Room('3','name',4,2,'pswd'),
+			'1': new Room('1','name', 35, 4, 2,'pswd'),
+			'2': new Room('2','name', 15, 4, 2,'pswd'),
+			'3': new Room('3','name', 5, 4, 2,'pswd'),
 		}
 		this.players = {}
 

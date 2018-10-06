@@ -38,6 +38,11 @@ class ConnectionController {
 		this.socket.on('room_unavailable', notAvailableCallback)
 	}
 
+	onMapData (callback) {
+		this.socket.emit('map_data')
+		this.socket.on('map_data', callback)
+	}
+
 	onPlayerData (callback) {
 		this.socket.emit('player_data')
 		this.socket.on('player_data', callback)
@@ -361,7 +366,9 @@ const {STATE} = require('../Constants.js')
 
 class BasicGame {
 
-	constructor (width, height) {
+	constructor () {}
+
+	generateGame (width, height) {
 		let self = this
 
 		this.width = width
@@ -472,14 +479,15 @@ var game_vars = {
 class DoublePlayerGame extends BasicGame {
 
 	constructor () {
+		super()
+
 		let mx = game_vars.map_width
 		let my = game_vars.map_height
 
-		super(mx, my)
+		this.generateGame(mx, my)
+		this.map = new GameMap(mx, my)
 
-		this.map = new GameMap(mx, my);
-
-		this.events = new Events();
+		this.events = new Events()
 		this.events.subscribe("player_update", this.playerUpdateCallback())
 		this.events.subscribe("player_update", this.mapUpdateCallback())
 
@@ -580,32 +588,38 @@ const Player = require('../Entities/Player.js')
 const OnlineEnemyPlayer = require('../Entities/OnlineEnemyPlayer.js')
 const {STATE} = require('../Constants.js')
 
-var game_vars = {
-	map_width: 35,
-	map_height: 35,
-}
-
 class MultiPlayerGame extends BasicGame {
 
 	constructor (connectionController) {
-		let mx = game_vars.map_width
-		let my = game_vars.map_height
+		super()
+		this.generateGame(0, 0)
 
-		super(mx, my)
-
-		this.map = new GameMap(mx, my)
 		this.connectionController = connectionController
-		this.events = new Events()
-		this.items = undefined
+		this.connectionController.onMapData(this.generateMap())
+		this.connectionController.onPlayerData(this.updatePlayerData())
+		this.connectionController.onPlayerMove(this.updatePlayerMove())
 
+		this.events = new Events()
 		this.events.subscribe("player_update", this.playerUpdateCallback())
 		this.events.subscribe("player_update", this.mapUpdateCallback())
 		this.events.subscribe("player_update", this.connectionController.sendPlayerMove())
 
-		this.connectionController.onPlayerData(this.updatePlayerData())
-		this.connectionController.onPlayerMove(this.updatePlayerMove())
+		this.items = undefined
 
 		this.hud = new HUD(this.players)
+	}
+
+	generateMap () {
+		let self = this
+
+		return function (data) {
+			console.log("Map data received: ", data)
+			let mx = data.map_width
+			let my = data.map_height
+
+			self.generateGame(mx, my)
+			self.map = new GameMap(mx, my)
+		}
 	}
 
 	updatePlayerMove () {
@@ -627,8 +641,8 @@ class MultiPlayerGame extends BasicGame {
 	}
 
 	updatePlayerData () {
-		let mx = game_vars.map_width
-		let my = game_vars.map_height
+		let mx = this.width
+		let my = this.height
 		let self = this
 
 		return function (data) {
@@ -676,14 +690,15 @@ var game_vars = {
 class SinglePlayerGame extends BasicGame {
 
 	constructor () {
+		super()
+
 		let mx = game_vars.map_width
 		let my = game_vars.map_height
 
-		super(mx, my)
+		this.generateGame(mx, my)
+		this.map = new GameMap(mx, my)
 
-		this.map = new GameMap(mx, my);
-
-		this.events = new Events();
+		this.events = new Events()
 		this.events.subscribe("player_update", this.playerUpdateCallback())
 		this.events.subscribe("player_update", this.mapUpdateCallback())
 

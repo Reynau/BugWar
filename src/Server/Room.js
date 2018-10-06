@@ -1,8 +1,9 @@
 class Room {
 	
-	constructor (id, name, nTeams, playersPerTeam, password) {
+	constructor (id, name, mapSize, nTeams, playersPerTeam, password) {
 		this.id = id
 		this.name = name
+		this.mapSize = mapSize
 		this.nTeams = nTeams
 		this.playersPerTeam = playersPerTeam
 		this.password = password
@@ -26,6 +27,8 @@ class Room {
 	playerJoin (playerSocket) {
 		let team = this.searchTeamSlot()
 		if (team) {
+			playerSocket.on('map_data', this.onMapData(playerSocket))
+
 			playerSocket = this.assignRandomPosition(playerSocket)
 			this.players[team][playerSocket.id] = playerSocket
 			this.players[team].nPlayers += 1
@@ -69,6 +72,15 @@ class Room {
 					}
 				}
 			}
+		}
+	}
+
+	onMapData (playerSocket) {
+		let self = this
+
+		return function () {
+			console.log("Player asked for map data")
+			playerSocket.emit('map_data', { map_width: self.mapSize, map_height: self.mapSize })
 		}
 	}
 
@@ -136,8 +148,8 @@ class Room {
 	}
 
 	assignRandomPosition (player) {
-		let x = this.random_round(0,49)
-		let y = this.random_round(0,49)
+		let x = this.random_round(0,this.mapSize-1)
+		let y = this.random_round(0,this.mapSize-1)
 
 		player.x = x
 		player.y = y
