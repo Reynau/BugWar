@@ -39,7 +39,7 @@ class MultiPlayerGame extends BasicGame {
 		let self = this
 
 		return function (data) {	
-			self.startButton.text = data.count + " of " + data.nPlayers + " players are ready!"
+			self.startButton.text = data.readyPlayers + " of " + data.nPlayers + " players are ready!"
 		}
 	}
 

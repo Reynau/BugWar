@@ -9,11 +9,14 @@ class Room {
 		this.password = password
 
 		this.nPlayers = 0
-		this.players = {
-			1: {nPlayers: 0},
-			2: {nPlayers: 0},
-			3: {nPlayers: 0},
-			4: {nPlayers: 0},
+		this.readyPlayers = 0
+
+		this.players = {}
+		this.teams = {
+			1: 0,
+			2: 0,
+			3: 0,
+			4: 0,
 		}
 
 		this.started = false // If a game has started, you cant join it
@@ -27,12 +30,14 @@ class Room {
 	playerJoin (playerSocket) {
 		let team = this.searchTeamSlot()
 		if (team) {
+			console.log("Player " + playerSocket.id + " assigned to team " + team)
 			playerSocket.on('map_data', this.onMapData(playerSocket))
 			playerSocket.on('player_ready', this.onPlayerReady(playerSocket))
 
 			playerSocket = this.assignRandomPosition(playerSocket)
-			this.players[team][playerSocket.id] = playerSocket
-			this.players[team].nPlayers += 1
+			playerSocket.team = team
+			this.players[playerSocket.id] = playerSocket
+			this.teams[team] += 1
 			this.nPlayers += 1
 
 			playerSocket.emit("room_joined", {
@@ -63,42 +68,34 @@ class Room {
 
 	onPlayerReady (playerSocket) {
 		let self = this
-		
-		return function () {
-			console.log("Player " + playerSocket.id + " is ready to start!")
-			let count = 1
-			for (let team in self.players) {
-				for (let socketId in self.players[team]) {
-					if (socketId === "nPlayers") continue
 
-					if (socketId === playerSocket.id) {
-						if (self.players[team][socketId].ready) return
-						self.players[team][socketId].ready = true
-					}
-					else {
-						if (self.players[team][socketId].ready) ++count;
-					}
-				}
+		return function () {
+			console.log(self.readyPlayers)
+			console.log("Player " + playerSocket.id + " is ready to start!")
+
+			if (!self.players[playerSocket.id].ready) {
+				self.players[playerSocket.id].ready = true
+				++self.readyPlayers
 			}
-			console.log("There are " + count + " of " + self.nPlayers + " players ready!")
-			if (count === self.nPlayers) {
+
+			console.log("There are " + self.readyPlayers + " of " + self.nPlayers + " players ready!")
+
+			if (self.readyPlayers === self.nPlayers) {
 				console.log("Initializing game...")
-				// If we reach this line, all players are ready
-				for (let team in self.players) {
-					for (let socketId in self.players[team]) {
-						if (socketId === "nPlayers") continue
-						self.players[team][socketId].emit('player_ready', { count: count, nPlayers: self.nPlayers })
-						self.players[team][socketId].emit('game_start')
+
+				for (let socketId in self.players) {
+					if (self.players[socketId]) {
+						self.players[socketId].emit('player_ready', { readyPlayers: self.readyPlayers, nPlayers: self.nPlayers })
+						self.players[socketId].emit('game_start')
 					}
 				}
+
 				console.log("Players have been initialized!")
 			}
 			else {
-				for (let team in self.players) {
-					for (let socketId in self.players[team]) {
-						if (socketId === "nPlayers") continue
-						self.players[team][socketId].emit('player_ready', { count: count, nPlayers: self.nPlayers })
-					}
+				for (let socketId in self.players) {
+					if (self.players[socketId])
+						self.players[socketId].emit('player_ready', { readyPlayers: self.readyPlayers, nPlayers: self.nPlayers })
 				}
 			}
 		}
@@ -108,13 +105,9 @@ class Room {
 		let self = this
 		return function (data) {
 			console.log("Received player_move data: ", data)
-			for (let team in self.players) {
-				for (let socketId in self.players[team]) {
-					if (socketId === "nPlayers") continue
-					if (self.players[team][socketId]) {
-						self.players[team][socketId].emit('player_move', data)
-					}
-				}
+			for (let socketId in self.players) {
+				if (self.players[socketId]) 
+					self.players[socketId].emit('player_move', data)
 			}
 		}
 	}
@@ -132,25 +125,20 @@ class Room {
 		let self = this
 		return function () {
 			let data = self.generatePlayerData()
-			for (let team in self.players) {
-				for (let socketId in self.players[team]) {
-					if (socketId === "nPlayers") continue
-					if (self.players[team][socketId]) {
-						self.players[team][socketId].emit('player_data', data)
-					}
-				}
+
+			for (let socketId in self.players) {
+				if (self.players[socketId]) 
+					self.players[socketId].emit('player_data', data)
 			}
 		}
 	}
 
 	sendPlayerData () {
 		let data = this.generatePlayerData()
-		for (let team in this.players) {
-			for (let socketId in this.players[team]) {
-				if (socketId === "nPlayers") continue
-				if (this.players[team][socketId]) {
-					this.players[team][socketId].emit('player_data', data)
-				}
+
+		for (let socketId in this.players) {
+			if (this.players[socketId]) {
+				this.players[socketId].emit('player_data', data)
 			}
 		}
 	}
@@ -162,18 +150,17 @@ class Room {
 			3: { },
 			4: { },
 		}
-		for (let team in this.players) {
-			for (let socketId in this.players[team]) {
-				if (socketId === "nPlayers") continue
-				if (this.players[team][socketId]) {
-					let player = this.players[team][socketId]
-					data[team][socketId] = {
-						x: player.x,
-						y: player.y,
-					}
+
+		for (let socketId in this.players) {
+			if (this.players[socketId]) {
+				let player = this.players[socketId]
+				data[player.team][socketId] = {
+					x: player.x,
+					y: player.y,
 				}
 			}
 		}
+
 		return data
 	}
 
@@ -181,13 +168,13 @@ class Room {
 		let minTeam = null
 		let minPlayers = this.playersPerTeam
 
-		for (let team in this.players) {
-			if (this.players[team].nPlayers < minPlayers) {
+		for (let team in this.teams) {
+			if (this.teams[team] < minPlayers) {
 				minTeam = team
-				minPlayers = this.players[team].nPlayers
+				minPlayers = this.teams[team]
 			}
 		}
-
+		
 		return minTeam
 	}
 
