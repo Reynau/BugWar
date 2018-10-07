@@ -63,7 +63,7 @@ class Room {
 
 	onPlayerReady (playerSocket) {
 		let self = this
-
+		
 		return function () {
 			console.log("Player " + playerSocket.id + " is ready to start!")
 			let count = 1
@@ -72,6 +72,7 @@ class Room {
 					if (socketId === "nPlayers") continue
 
 					if (socketId === playerSocket.id) {
+						if (self.players[team][socketId].ready) return
 						self.players[team][socketId].ready = true
 					}
 					else {
@@ -86,10 +87,19 @@ class Room {
 				for (let team in self.players) {
 					for (let socketId in self.players[team]) {
 						if (socketId === "nPlayers") continue
+						self.players[team][socketId].emit('player_ready', { count: count, nPlayers: self.nPlayers })
 						self.players[team][socketId].emit('game_start')
 					}
 				}
 				console.log("Players have been initialized!")
+			}
+			else {
+				for (let team in self.players) {
+					for (let socketId in self.players[team]) {
+						if (socketId === "nPlayers") continue
+						self.players[team][socketId].emit('player_ready', { count: count, nPlayers: self.nPlayers })
+					}
+				}
 			}
 		}
 	}

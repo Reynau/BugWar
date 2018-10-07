@@ -30,7 +30,16 @@ class MultiPlayerGame extends BasicGame {
 		let self = this
 
 		return function () {
+			self.connectionController.onPlayerReady(self.playerReady())
 			self.connectionController.onGameStart(self.initGame())
+		}
+	}
+
+	playerReady () {
+		let self = this
+
+		return function (data) {	
+			self.startButton.text = data.count + " of " + data.nPlayers + " players are ready!"
 		}
 	}
 

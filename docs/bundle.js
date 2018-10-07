@@ -38,8 +38,12 @@ class ConnectionController {
 		this.socket.on('room_unavailable', notAvailableCallback)
 	}
 
-	onGameStart (callback) {
+	onPlayerReady (callback) {
 		this.socket.emit('player_ready')
+		this.socket.on('player_ready', callback)
+	}
+
+	onGameStart (callback) {
 		this.socket.on('game_start', callback)
 	}
 
@@ -466,6 +470,8 @@ class BasicGame {
 	}
 
 	checkButton (mouse, button) {
+		if (!button.isActive) return
+
 		let click = (mouse.clicked) ? mouse.getClickPosition() : false
 		let mousePos = mouse.getPosition()
 
@@ -649,7 +655,16 @@ class MultiPlayerGame extends BasicGame {
 		let self = this
 
 		return function () {
+			self.connectionController.onPlayerReady(self.playerReady())
 			self.connectionController.onGameStart(self.initGame())
+		}
+	}
+
+	playerReady () {
+		let self = this
+
+		return function (data) {	
+			self.startButton.text = data.count + " of " + data.nPlayers + " players are ready!"
 		}
 	}
 
@@ -1045,6 +1060,7 @@ const BUTTON_STATE = {
 	STATIC: 1,
 	HOVER: 2,
 	CLICK: 3,
+	HIDE: 4,
 }
 
 class Button {
@@ -1073,6 +1089,14 @@ class Button {
 	click () {
 		this.state = BUTTON_STATE.CLICK
 		return this.callback()
+	}
+
+	isActive () {
+		return this.state = BUTTON_STATE.HIDE
+	}
+
+	hide () {
+		this.state = BUTTON_STATE.HIDE
 	}
 
 	isInside (pos) {
@@ -1116,6 +1140,7 @@ class Button {
 			case BUTTON_STATE.STATIC: this.drawStaticButton(); break
 			case BUTTON_STATE.HOVER: this.drawHoverButton(); break
 			case BUTTON_STATE.CLICK: this.drawHoverButton(); break
+			case BUTTON_STATE.HIDE: break
 		}
 		
 	}
