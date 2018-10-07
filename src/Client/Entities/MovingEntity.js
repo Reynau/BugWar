@@ -56,12 +56,10 @@ class MovingEntity extends Entity {
 	collideWithPlayer (players) {
 		let self = this
 		let collide = false
-		for (let team in players) {
-			players[team].forEach((player) => {
-				if (collide || player.id === self.id) return
-				collide = (player.x === self.x && player.y === self.y)
-			})
-		}
+		players.forEach((player) => {
+			if (collide || player.id === self.id) return
+			collide = (player.x === self.x && player.y === self.y)
+		})
 		return collide
 	}
 

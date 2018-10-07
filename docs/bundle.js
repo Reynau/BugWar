@@ -198,12 +198,10 @@ class MovingEntity extends Entity {
 	collideWithPlayer (players) {
 		let self = this
 		let collide = false
-		for (let team in players) {
-			players[team].forEach((player) => {
-				if (collide || player.id === self.id) return
-				collide = (player.x === self.x && player.y === self.y)
-			})
-		}
+		players.forEach((player) => {
+			if (collide || player.id === self.id) return
+			collide = (player.x === self.x && player.y === self.y)
+		})
 		return collide
 	}
 
@@ -381,11 +379,11 @@ class BasicGame {
 			RUNNING: 2
 		}
 		this.generateGame(0, 0)
+
+		this.players = []
 	}
 
 	generateGame (width, height) {
-		let self = this
-
 		this.width = width
 		this.height = height
 		this.state = this.GAME_STATE.STOPPED
@@ -438,7 +436,7 @@ class BasicGame {
 	}
 
 	updatePlayerPoints (team, id, points) {
-		this.players[team].forEach((player) => {
+		this.players.forEach(player => {
 			if (player.id === id) player.incrementPoints(points)
 		})
 	}
@@ -460,19 +458,11 @@ class BasicGame {
 	}
 
 	updatePlayers (keyboard) {
-		for (let team in this.players) {
-			for (let p = 0; p < this.players[team].length; ++p) {
-				this.players[team][p].update(this.players, keyboard, this.events)
-			}
-		}
+		this.players.forEach(player => player.update(this.players, keyboard, this.events))
 	}
 
 	drawPlayers () {
-		for (let team in this.players) {
-			for (let p = 0; p < this.players[team].length; ++p) {
-				this.players[team][p].draw()
-			}
-		}
+		this.players.forEach(player => player.draw())
 	}
 
 	checkButton (mouse, button) {
@@ -542,12 +532,10 @@ class DoublePlayerGame extends BasicGame {
 
 		this.items = undefined
 
-		this.players = {
-			1: [new Player(1, 0, 0, mx, my, 1, 1)],
-			2: [new Player(2, mx-1, my-1, mx, my, 2, 2)],
-			3: [],
-			4: [],
-		}
+		this.players = [
+			new Player(1, 0, 0, mx, my, 1, 1),
+			new Player(2, mx-1, my-1, mx, my, 2, 2)
+		]
 
 		this.hud = new HUD(this.players, mx, my)
 	}
@@ -613,12 +601,20 @@ class HUD {
 	drawTeamPoints () {
 		let x = this.map_width * 15 + 25
 		let y = 50
-		for (let team in this.players) {
-			let points = 0
-			for (let p = 0; p < this.players[team].length; ++p) {
-				points += this.players[team][p].points
-			}
-			this.drawText("Team " + team + " points: " + points, x, y * team)
+
+		let points = { 
+			1: 0,
+			2: 0,
+			3: 0,
+			4: 0
+		}
+
+		this.players.forEach(player => {
+			points[player.team] += player.points
+		})
+
+		for (let team in points) {
+			this.drawText("Team " + team + " points: " + points[team], x, y * team)
 		}
 	}
 
@@ -712,16 +708,15 @@ class MultiPlayerGame extends BasicGame {
 
 		return function (data) {
 			console.log("Received player_move data: ", data)
-			for (let team in self.players) {
-				for (let id in self.players[team]) {
-					if (self.players[team][id].id === self.connectionController.socket.id) continue
 
-					if (self.players[team][id].id === data.id) {
-						self.players[team][id].onMovePlayerData(data)
-						return
-					}
+			self.players.forEach(player => {
+				if (player.id === self.connectionController.socket.id) return
+
+				if (player.id === data.id) {
+					player.onMovePlayerData(data)
+					return
 				}
-			}
+			})
 		}
 	}
 
@@ -732,26 +727,18 @@ class MultiPlayerGame extends BasicGame {
 
 		return function (data) {
 			console.log("Player data received.")
-			self.players = {
-				1: [],
-				2: [],
-				3: [],
-				4: [],
-			}
-
-			for (let team in data) {
-				for (let id in data[team]) {
-					let playerData = data[team][id]
-					let player = undefined
-					if (id === self.connectionController.socket.id) {
-						player = new Player(id, playerData.x, playerData.y, mx, my, team, 1)
-					}
-					else {
-						player = new OnlineEnemyPlayer(id, playerData.x, playerData.y, mx, my, team)
-					}
-					self.players[team].push(player)
+			self.players = []
+			console.log(data)
+			data.forEach(playerData => {
+				let player = undefined
+				if (playerData.id === self.connectionController.socket.id) {
+					player = new Player(playerData.id, playerData.x, playerData.y, mx, my, playerData.team, 1)
 				}
-			}
+				else {
+					player = new OnlineEnemyPlayer(playerData.id, playerData.x, playerData.y, mx, my, playerData.team)
+				}
+				self.players.push(player)
+			})
 			self.hud.setPlayers(self.players)
 		}
 	}
@@ -789,12 +776,18 @@ class SinglePlayerGame extends BasicGame {
 
 		this.items = undefined
 
-		this.players = {
-			1: [new Player(1, 0, 0, mx, my, 1)],
-			2: [new IA(2, 0, my-1, mx, my, 2), new IA(2, 0, my-5, mx, my, 2)],
-			3: [new IA(3, mx-1, 0, mx, my, 3), new IA(3, mx-5, 0, mx, my, 3)],
-			4: [new IA(4, mx-1, my-1, mx, my, 4), new IA(4, mx-5, my-1, mx, my, 4)],
-		}
+		this.players = [
+			new Player(1, 0, 0, mx, my, 1),
+
+			new IA(2, 0, my-1, mx, my, 2), 
+			new IA(3, 0, my-5, mx, my, 2),
+
+			new IA(4, mx-1, 0, mx, my, 3), 
+			new IA(5, mx-5, 0, mx, my, 3),
+
+			new IA(6, mx-1, my-1, mx, my, 4), 
+			new IA(7, mx-5, my-1, mx, my, 4)
+		]
 
 		this.hud = new HUD(this.players, mx, my)
 	}

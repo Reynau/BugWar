@@ -81,16 +81,15 @@ class MultiPlayerGame extends BasicGame {
 
 		return function (data) {
 			console.log("Received player_move data: ", data)
-			for (let team in self.players) {
-				for (let id in self.players[team]) {
-					if (self.players[team][id].id === self.connectionController.socket.id) continue
 
-					if (self.players[team][id].id === data.id) {
-						self.players[team][id].onMovePlayerData(data)
-						return
-					}
+			self.players.forEach(player => {
+				if (player.id === self.connectionController.socket.id) return
+
+				if (player.id === data.id) {
+					player.onMovePlayerData(data)
+					return
 				}
-			}
+			})
 		}
 	}
 
@@ -101,26 +100,18 @@ class MultiPlayerGame extends BasicGame {
 
 		return function (data) {
 			console.log("Player data received.")
-			self.players = {
-				1: [],
-				2: [],
-				3: [],
-				4: [],
-			}
-
-			for (let team in data) {
-				for (let id in data[team]) {
-					let playerData = data[team][id]
-					let player = undefined
-					if (id === self.connectionController.socket.id) {
-						player = new Player(id, playerData.x, playerData.y, mx, my, team, 1)
-					}
-					else {
-						player = new OnlineEnemyPlayer(id, playerData.x, playerData.y, mx, my, team)
-					}
-					self.players[team].push(player)
+			self.players = []
+			console.log(data)
+			data.forEach(playerData => {
+				let player = undefined
+				if (playerData.id === self.connectionController.socket.id) {
+					player = new Player(playerData.id, playerData.x, playerData.y, mx, my, playerData.team, 1)
 				}
-			}
+				else {
+					player = new OnlineEnemyPlayer(playerData.id, playerData.x, playerData.y, mx, my, playerData.team)
+				}
+				self.players.push(player)
+			})
 			self.hud.setPlayers(self.players)
 		}
 	}

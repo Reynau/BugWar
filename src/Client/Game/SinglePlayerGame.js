@@ -28,12 +28,18 @@ class SinglePlayerGame extends BasicGame {
 
 		this.items = undefined
 
-		this.players = {
-			1: [new Player(1, 0, 0, mx, my, 1)],
-			2: [new IA(2, 0, my-1, mx, my, 2), new IA(2, 0, my-5, mx, my, 2)],
-			3: [new IA(3, mx-1, 0, mx, my, 3), new IA(3, mx-5, 0, mx, my, 3)],
-			4: [new IA(4, mx-1, my-1, mx, my, 4), new IA(4, mx-5, my-1, mx, my, 4)],
-		}
+		this.players = [
+			new Player(1, 0, 0, mx, my, 1),
+
+			new IA(2, 0, my-1, mx, my, 2), 
+			new IA(3, 0, my-5, mx, my, 2),
+
+			new IA(4, mx-1, 0, mx, my, 3), 
+			new IA(5, mx-5, 0, mx, my, 3),
+
+			new IA(6, mx-1, my-1, mx, my, 4), 
+			new IA(7, mx-5, my-1, mx, my, 4)
+		]
 
 		this.hud = new HUD(this.players, mx, my)
 	}

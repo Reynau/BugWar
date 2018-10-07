@@ -22,12 +22,20 @@ class HUD {
 	drawTeamPoints () {
 		let x = this.map_width * 15 + 25
 		let y = 50
-		for (let team in this.players) {
-			let points = 0
-			for (let p = 0; p < this.players[team].length; ++p) {
-				points += this.players[team][p].points
-			}
-			this.drawText("Team " + team + " points: " + points, x, y * team)
+
+		let points = { 
+			1: 0,
+			2: 0,
+			3: 0,
+			4: 0
+		}
+
+		this.players.forEach(player => {
+			points[player.team] += player.points
+		})
+
+		for (let team in points) {
+			this.drawText("Team " + team + " points: " + points[team], x, y * team)
 		}
 	}
 

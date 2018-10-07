@@ -14,11 +14,11 @@ class BasicGame {
 			RUNNING: 2
 		}
 		this.generateGame(0, 0)
+
+		this.players = []
 	}
 
 	generateGame (width, height) {
-		let self = this
-
 		this.width = width
 		this.height = height
 		this.state = this.GAME_STATE.STOPPED
@@ -71,7 +71,7 @@ class BasicGame {
 	}
 
 	updatePlayerPoints (team, id, points) {
-		this.players[team].forEach((player) => {
+		this.players.forEach(player => {
 			if (player.id === id) player.incrementPoints(points)
 		})
 	}
@@ -93,19 +93,11 @@ class BasicGame {
 	}
 
 	updatePlayers (keyboard) {
-		for (let team in this.players) {
-			for (let p = 0; p < this.players[team].length; ++p) {
-				this.players[team][p].update(this.players, keyboard, this.events)
-			}
-		}
+		this.players.forEach(player => player.update(this.players, keyboard, this.events))
 	}
 
 	drawPlayers () {
-		for (let team in this.players) {
-			for (let p = 0; p < this.players[team].length; ++p) {
-				this.players[team][p].draw()
-			}
-		}
+		this.players.forEach(player => player.draw())
 	}
 
 	checkButton (mouse, button) {

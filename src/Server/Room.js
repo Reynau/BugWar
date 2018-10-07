@@ -140,20 +140,17 @@ class Room {
 	}
 
 	generatePlayerData () {
-		let data = {
-			1: { },
-			2: { },
-			3: { },
-			4: { },
-		}
+		let data = []
 
 		for (let socketId in this.players) {
 			if (this.players[socketId]) {
 				let player = this.players[socketId]
-				data[player.team][socketId] = {
+				data.push({
+					id: socketId,
 					x: player.x,
 					y: player.y,
-				}
+					team: player.team
+				})
 			}
 		}
 

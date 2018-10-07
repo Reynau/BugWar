@@ -28,12 +28,10 @@ class DoublePlayerGame extends BasicGame {
 
 		this.items = undefined
 
-		this.players = {
-			1: [new Player(1, 0, 0, mx, my, 1, 1)],
-			2: [new Player(2, mx-1, my-1, mx, my, 2, 2)],
-			3: [],
-			4: [],
-		}
+		this.players = [
+			new Player(1, 0, 0, mx, my, 1, 1),
+			new Player(2, mx-1, my-1, mx, my, 2, 2)
+		]
 
 		this.hud = new HUD(this.players, mx, my)
 	}
