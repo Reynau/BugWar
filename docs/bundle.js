@@ -476,7 +476,7 @@ class BasicGame {
 	}
 
 	checkButton (mouse, button) {
-		if (!button.isActive) return
+		if (!button.isActive()) return
 
 		let click = (mouse.clicked) ? mouse.getClickPosition() : false
 		let mousePos = mouse.getPosition()
@@ -690,6 +690,7 @@ class MultiPlayerGame extends BasicGame {
 		return function () {
 			console.log("Init game received!")
 			self.state = self.GAME_STATE.RUNNING
+			self.startButton.hide()
 		}
 	}
 
@@ -1108,7 +1109,7 @@ class Button {
 	}
 
 	isActive () {
-		return this.state = BUTTON_STATE.HIDE
+		return this.state !== BUTTON_STATE.HIDE
 	}
 
 	hide () {

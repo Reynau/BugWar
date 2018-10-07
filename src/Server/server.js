@@ -48,11 +48,12 @@ class Server {
 		let self = this
 		return function () {
 			console.log("Player with id " + socket.id + " disconnected. Leaving room if any...")
+			
 			let room = self.players[socket.id].room
-
-			self.players[socket.id] = null
 			if (room) self.rooms[room].playerLeave(socket.id)
 			else console.log("No room found on disconnected player.")
+
+			self.players[socket.id] = null
 		}
 	}
 

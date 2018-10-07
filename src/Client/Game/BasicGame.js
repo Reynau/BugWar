@@ -109,7 +109,7 @@ class BasicGame {
 	}
 
 	checkButton (mouse, button) {
-		if (!button.isActive) return
+		if (!button.isActive()) return
 
 		let click = (mouse.clicked) ? mouse.getClickPosition() : false
 		let mousePos = mouse.getPosition()

@@ -34,7 +34,7 @@ class Button {
 	}
 
 	isActive () {
-		return this.state = BUTTON_STATE.HIDE
+		return this.state !== BUTTON_STATE.HIDE
 	}
 
 	hide () {

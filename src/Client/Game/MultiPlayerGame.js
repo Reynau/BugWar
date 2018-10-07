@@ -59,6 +59,7 @@ class MultiPlayerGame extends BasicGame {
 		return function () {
 			console.log("Init game received!")
 			self.state = self.GAME_STATE.RUNNING
+			self.startButton.hide()
 		}
 	}
 

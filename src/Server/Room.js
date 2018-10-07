@@ -54,16 +54,12 @@ class Room {
 	}
 
 	playerLeave (socketId) {
-		for (let team in this.players) {
-			if (this.players[team][socketId]) {
-				this.players[team][socketId] = null
-				--this.players[team].nPlayers
-				--this.nPlayers
-				this.sendPlayerData()
-				console.log("Player leaved room " + this.id)
-				return
-			}
-		}
+		let team = this.players[socketId].team
+		this.players[socketId] = null
+		--this.teams[team]
+		--this.nPlayers
+		this.sendPlayerData()
+		console.log("Player leaved room " + this.id)
 	}
 
 	onPlayerReady (playerSocket) {
@@ -174,7 +170,7 @@ class Room {
 				minPlayers = this.teams[team]
 			}
 		}
-		
+
 		return minTeam
 	}
 
