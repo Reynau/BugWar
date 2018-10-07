@@ -402,10 +402,7 @@ class BasicGame {
 				borderColor: "black",
 				textColor: "black",
 			},
-			function () {
-				self.state = self.GAME_STATE.STOPPED
-				self.changeState = STATE.MENU
-			}
+			this.backMenu()
 		)
 
 		this.startButton = new Button(
@@ -428,6 +425,15 @@ class BasicGame {
 		
 		return function () {
 			self.state = self.GAME_STATE.RUNNING
+		}
+	}
+
+	backMenu () {
+		let self = this
+		
+		return function () {
+			self.state = self.GAME_STATE.STOPPED
+			self.changeState = STATE.MENU
 		}
 	}
 
@@ -657,6 +663,16 @@ class MultiPlayerGame extends BasicGame {
 		return function () {
 			self.connectionController.onPlayerReady(self.playerReady())
 			self.connectionController.onGameStart(self.initGame())
+		}
+	}
+
+	backMenu () {
+		let self = this
+		
+		return function () {
+			self.state = self.GAME_STATE.STOPPED
+			self.changeState = STATE.MENU
+			self.connectionController.disconnect()
 		}
 	}
 

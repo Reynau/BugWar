@@ -35,6 +35,16 @@ class MultiPlayerGame extends BasicGame {
 		}
 	}
 
+	backMenu () {
+		let self = this
+		
+		return function () {
+			self.state = self.GAME_STATE.STOPPED
+			self.changeState = STATE.MENU
+			self.connectionController.disconnect()
+		}
+	}
+
 	playerReady () {
 		let self = this
 

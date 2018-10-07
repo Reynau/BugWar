@@ -35,10 +35,7 @@ class BasicGame {
 				borderColor: "black",
 				textColor: "black",
 			},
-			function () {
-				self.state = self.GAME_STATE.STOPPED
-				self.changeState = STATE.MENU
-			}
+			this.backMenu()
 		)
 
 		this.startButton = new Button(
@@ -61,6 +58,15 @@ class BasicGame {
 		
 		return function () {
 			self.state = self.GAME_STATE.RUNNING
+		}
+	}
+
+	backMenu () {
+		let self = this
+		
+		return function () {
+			self.state = self.GAME_STATE.STOPPED
+			self.changeState = STATE.MENU
 		}
 	}
 
