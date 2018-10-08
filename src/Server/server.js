@@ -13,33 +13,28 @@ class Server {
 		}
 		this.players = {}
 
-		io.on('connection', this.onPlayerConnect())
+		io.on('connection', this.onPlayerConnect.bind(this))
 		io.listen(this.port)
 		console.log("Server listening to port " + this.port)
 	}
 
-	onPlayerConnect () {
-		let self = this
-		return function (socket) {
-			console.log("Socked with id " + socket.id + " has connected")
-			self.players[socket.id] = socket
+	onPlayerConnect (socket) {
+		console.log("Player " + socket.id + " has connected")
+		this.players[socket.id] = socket
 
-			socket.on('list_rooms', self.listRooms(socket))
-			socket.on('join_room', self.playerJoinRoom(socket))
-			socket.on('leave_room', self.playerLeaveRoom(socket))
-			socket.on('disconnect', self.onPlayerDisconnect(socket))
-		}
+		socket.on('list_rooms', this.listRooms(socket))
+		socket.on('join_room', this.playerJoinRoom(socket))
+		socket.on('leave_room', this.playerLeaveRoom(socket))
+		socket.on('disconnect', this.onPlayerDisconnect(socket))
 	}
 
 	listRooms (socket) {
 		let self = this
 		return function () {
-			console.log("Generating list of rooms...")
 			let rooms = []
 			for (let room in self.rooms) {
 				rooms.push(room)
 			}
-			console.log("Emiting list: ", rooms)
 			socket.emit('list_rooms', rooms)
 		}
 	}
@@ -47,13 +42,11 @@ class Server {
 	onPlayerDisconnect (socket) {
 		let self = this
 		return function () {
-			console.log("Player with id " + socket.id + " disconnected. Leaving room if any...")
-			
 			let room = self.players[socket.id].room
 			if (room) self.rooms[room].playerLeave(socket.id)
-			else console.log("No room found on disconnected player.")
 
 			self.players[socket.id] = null
+			console.log("Player " + socket.id + " has disconnected")
 		}
 	}
 
@@ -68,12 +61,10 @@ class Server {
 			}
 			// If room is available, join the room
 			if (self.isRoomAvailable(room)) {
-				console.log("Room " + room + " is available. Joining in...")
 				self.players[socket.id].room = room
 				self.rooms[room].playerJoin(self.players[socket.id])
 			}
 			else {
-				console.log("Room " + room + " is not available.")
 				socket.emit('room_unavailable')
 			}
 		}

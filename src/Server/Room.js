@@ -30,7 +30,6 @@ class Room {
 	playerJoin (playerSocket) {
 		let team = this.searchTeamSlot()
 		if (team) {
-			console.log("Player " + playerSocket.id + " assigned to team " + team)
 			playerSocket.on('map_data', this.onMapData(playerSocket))
 			playerSocket.on('player_ready', this.onPlayerReady(playerSocket))
 
@@ -44,7 +43,7 @@ class Room {
 				room: this.id,
 				team: team,
 			})
-			console.log("Player joined room " + this.id + " at team " + team + " successfully.")
+			console.log("Player " + playerSocket.id + " joined room " + this.id + " at team " + team + " successfully.")
 
 			// When new player is ready, update all the players with the new player
 			playerSocket.on('player_data', this.onPlayerData.bind(this))
@@ -63,24 +62,21 @@ class Room {
 		--this.nPlayers
 
 		this.sendPlayerData()
-		console.log("Player leaved room " + this.id)
+		console.log("Player " + socketId + " leaved room " + this.id)
 	}
 
 	onPlayerReady (playerSocket) {
 		let self = this
 
 		return function () {
-			console.log("Player " + playerSocket.id + " is ready to start!")
+			if (self.players[playerSocket.id].ready) return
 
-			if (!self.players[playerSocket.id].ready) {
-				self.players[playerSocket.id].ready = true
-				++self.readyPlayers
-			}
+			self.players[playerSocket.id].ready = true
+			++self.readyPlayers
 
-			console.log("There are " + self.readyPlayers + " of " + self.nPlayers + " players ready!")
+			console.log("Room " + self.id + ": " + self.readyPlayers + " of " + self.nPlayers + " players ready!")
 
 			if (self.readyPlayers === self.nPlayers) {
-				console.log("Initializing game...")
 
 				for (let socketId in self.players) {
 					if (self.players[socketId]) {
@@ -89,7 +85,7 @@ class Room {
 					}
 				}
 
-				console.log("Players have been initialized!")
+				console.log("Room " + self.id + ": All players ready. Game has started!")
 			}
 			else {
 				for (let socketId in self.players) {
@@ -110,7 +106,6 @@ class Room {
 	}
 
 	onPlayerMove () {
-		console.log("Received player_move data: ", data)
 		for (let socketId in this.players) {
 			if (this.players[socketId]) 
 				this.players[socketId].emit('player_move', data)
@@ -121,7 +116,6 @@ class Room {
 		let self = this
 
 		return function () {
-			console.log("Player asked for map data")
 			playerSocket.emit('map_data', { map_width: self.mapSize, map_height: self.mapSize })
 		}
 	}
