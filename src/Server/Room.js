@@ -47,17 +47,21 @@ class Room {
 			console.log("Player joined room " + this.id + " at team " + team + " successfully.")
 
 			// When new player is ready, update all the players with the new player
-			playerSocket.on('player_data', this.onPlayerData())
-			playerSocket.on('player_move', this.onPlayerMove())
+			playerSocket.on('player_data', this.onPlayerData.bind(this))
+			playerSocket.on('player_move', this.onPlayerMove.bind(this))
 		}
 		else console.log("Cannot find any available team")
 	}
 
 	playerLeave (socketId) {
-		let team = this.players[socketId].team
+		let socket = this.players[socketId]
 		this.players[socketId] = null
-		--this.teams[team]
+
+		socket.disconnect()
+
+		--this.teams[socket.team]
 		--this.nPlayers
+
 		this.sendPlayerData()
 		console.log("Player leaved room " + this.id)
 	}
@@ -66,7 +70,6 @@ class Room {
 		let self = this
 
 		return function () {
-			console.log(self.readyPlayers)
 			console.log("Player " + playerSocket.id + " is ready to start!")
 
 			if (!self.players[playerSocket.id].ready) {
@@ -97,14 +100,20 @@ class Room {
 		}
 	}
 
+	onPlayerData () {
+		let data = this.generatePlayerData()
+
+		for (let socketId in this.players) {
+			if (this.players[socketId]) 
+				this.players[socketId].emit('player_data', data)
+		}
+	}
+
 	onPlayerMove () {
-		let self = this
-		return function (data) {
-			console.log("Received player_move data: ", data)
-			for (let socketId in self.players) {
-				if (self.players[socketId]) 
-					self.players[socketId].emit('player_move', data)
-			}
+		console.log("Received player_move data: ", data)
+		for (let socketId in this.players) {
+			if (this.players[socketId]) 
+				this.players[socketId].emit('player_move', data)
 		}
 	}
 
@@ -114,18 +123,6 @@ class Room {
 		return function () {
 			console.log("Player asked for map data")
 			playerSocket.emit('map_data', { map_width: self.mapSize, map_height: self.mapSize })
-		}
-	}
-
-	onPlayerData () {
-		let self = this
-		return function () {
-			let data = self.generatePlayerData()
-
-			for (let socketId in self.players) {
-				if (self.players[socketId]) 
-					self.players[socketId].emit('player_data', data)
-			}
 		}
 	}
 

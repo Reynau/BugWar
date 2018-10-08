@@ -63,7 +63,8 @@ class Server {
 			// Check if player has already a room.
 			// If it has already one, leaves it.
 			if (self.players[socket.id].room && self.players[socket.id].room !== room) {
-				self.playerLeaveRoom(socket)
+				console.warn("Player " + socket.id + "without leaving room is trying to go to another room")
+				(self.playerLeaveRoom(socket))()
 			}
 			// If room is available, join the room
 			if (self.isRoomAvailable(room)) {

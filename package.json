@@ -12,9 +12,9 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "browserify": "^16.2.2"
+    "browserify": "^16.2.3"
   },
   "dependencies": {
-    "socket.io": "^2.1.0"
+    "socket.io": "^2.1.1"
   }
 }
