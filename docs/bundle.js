@@ -389,9 +389,13 @@ class BasicGame {
 		this.state = this.GAME_STATE.STOPPED
 		this.changeState = STATE.GAME
 
+		this.generateUI()
+	}
+
+	generateUI () {
 		this.backButton = new Button(
 			15, 
-			height * 15 + 25, 
+			this.height * 15 + 25, 
 			200, 50, 
 			"Back to menu", 
 			{
@@ -405,7 +409,7 @@ class BasicGame {
 
 		this.startButton = new Button(
 			250, 
-			height * 15 + 25, 
+			this.height * 15 + 25, 
 			200, 50, 
 			"Start", 
 			{
