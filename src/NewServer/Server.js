@@ -16,6 +16,10 @@ class Server {
 		socket.on('list_rooms', this.sendListRooms.bind(this, socket))
 		socket.on('join_room',  this.playerJoinRoom.bind(this, socket))
 		socket.on('leave_room', this.playerLeaveRoom.bind(this, socket))
+
+		// Not implemented yet
+		socket.on('create_room', this.playerCreateRoom.bind(this, socket))
+		socket.on('delete_room', this.playerDeleteRoom.bind(this, socket))
 	}
 
 	disconnectPlayer (socket) {
@@ -39,21 +43,34 @@ class Server {
 			return
 		}
 
-		if (this.roomManager.isRoomAvailable(room)) {
-			this.players[socket.id].room = room
-			this.roomManager.playerJoin(socket, room)
+		if (this.roomManager.isRoomAvailable(roomId)) {
+			this.players[socket.id].room = roomId
+			this.roomManager.playerJoinRoom(socket, roomId)
 		}
 		else {
 			socket.emit('room_unavailable')
 		}
 	}
 
-	playerLeaveRoom (socket, roomId) {
+	playerLeaveRoom (socket) {
 		let room = this.players[socket.id].room
-		if (room) {
-			this.players[socket.id].room = null
-			this.rooms[room].playerLeave(socket.id)
-			socket.emit('room_left')
+
+		if (room == undefined) {
+			console.warn("Server.js: Player " + socket.id + " is trying leave a room withot being in any.")
+			this.disconnectPlayer(socket)
+			return
 		}
+
+		this.players[socket.id].room = null
+		this.rooms[room].playerLeave(socket.id)
+		socket.emit('room_left')
+	}
+
+	playerCreateRoom (socket, roomData) {
+
+	}
+
+	playerDeleteRoom (socket, roomId) {
+
 	}
 }
