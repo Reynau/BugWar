@@ -1,3 +1,4 @@
+const Room = require('./Room')
 
 class RoomManager {
 	constructor () {
@@ -32,3 +33,5 @@ class RoomManager {
 		this.idQueue.push(roomId)
 	}
 }
+
+module.export = RoomManager
